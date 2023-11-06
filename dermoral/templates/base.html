@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>{% block title %}{% endblock %}</title>
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="/static/bootstrapcss.css">
+    {% block head %}{% endblock %}
+    <style>
+        a,
+        a:hover,
+        a:focus {
+            color: inherit;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        #sidebar {
+            max-width: 35%;
+            width: 20%;
+            height: 100vh;
+            background: white;
+            color: rgba(156, 162, 187, 1);
+            transition: all 0.3s;
+        }
+
+        #sidebar ul.components {
+            padding: 20px 0;
+            border-bottom: 1px solid white;
+        }
+
+        #sidebar ul p {
+            color: black;
+            padding: 10px;
+        }
+
+        #sidebar ul li a {
+            padding: 10px;
+            font-size: 1.1em;
+            display: block;
+        }
+
+        /* #sidebar ul li a:hover {
+            color: #2C5F2D;
+            background: #fff;
+        }
+
+        #sidebar ul li.active>a,
+        a[aria-expanded="true"] {
+            color: #fff;
+            background: #2C5F2D;
+        } */
+
+        a[data-toggle="collapse"] {
+            position: relative;
+        }
+
+        .dropdown-toggle::after {
+            display: block;
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+        }
+
+        .nav-link {
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+        }
+
+        .fs-custom {
+            font-size: 1.1rem !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid ">
+        <div class="d-flex">
+            <nav id="sidebar" class="col-md-3 shadow p-3">
+                <img src="/static/media/fyplogo.png" class="img-fluid rounded-0" />
+                <div class="nav" id="navbarCollapse">
+                    <ul class="navbar-nav flex-column">
+                        <li class="nav-item">
+                            <a href="#homeSubmenu" data-toggle="collapse" aria-expanded="false"
+                                class="dropdown-toggle">Profile</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#">Find Nearby Clinics</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#servicesSubmenu" data-toggle="collapse" aria-expanded="false"
+                                class="dropdown-toggle">History</a>
+                            <a href="#">Logout</a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+    <script src="/static/bootstrap.bundle.js"></script>
+    <script src="/static/popper.js"></script>
+</body>
+
+</html>
