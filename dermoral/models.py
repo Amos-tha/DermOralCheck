@@ -4,8 +4,8 @@ from django.db import models
 class Account(models.Model):
     phoneNo = models.CharField(primary_key=True, unique=True, max_length=20)
     name = models.CharField(max_length=250)
-    email = models.EmailField(max_length=250, null=True)
-    address = models.CharField(max_length=250)
+    email = models.EmailField(max_length=255)
+    address = models.CharField(max_length=250, blank=True)
     password = models.CharField(max_length=250)
     healthCondition = models.CharField(max_length=250, blank=True)
 

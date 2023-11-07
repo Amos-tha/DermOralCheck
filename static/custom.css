@@ -1,0 +1,11 @@
+body{
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+input {
+  background-color: #faf8f8 !important;
+}
+
+::placeholder {
+  color: #8B8FA8 !important;
+  font-size: small;
+}
