@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.http import HttpResponse
 from django.core.files.storage import FileSystemStorage
 from django.db import connection
@@ -37,7 +38,7 @@ def signup(request):
                                     phoneNo=request.POST.get('phone'),
                                     email=request.POST.get('email'),
                                     password=request.POST.get('psw'))
-            return render(request, 'login.html', {})
+            return redirect("login")
         else:
             messages.error(request, 'The password is not matched with the confirmation password.')
     return render(request, "signup.html", {})
@@ -72,26 +73,28 @@ def detect(request):
         # Create a list of predictions and their probabilities
         diagnosis_result = []
         for label, probability in zip(top_N_labels, top_N_probabilities):
-            probability_formatted = round(probability, 4)
+            probability_formatted = round(float(probability), 4)
 
             # get the related disease object based on the name
-            disease = Disease.objects.get(name=label) 
+            # disease = Disease.objects.filter(name=label)
 
             # insert the new record
             record = Record.objects.create(patient=user, 
-                                    disease=disease,
+                                    disease=Disease.objects.filter(name=label).first(),
+                                    probability=probability_formatted,
                                     disease_img=uploaded_file)
             
             if(probability_formatted > 0):
-                diagnosis_result.append({"disease": disease, "probability": probability_formatted})
+                diagnosis_result.append(Disease.objects.filter(name=label).values().first())
         # Print or return the list of predictions
-        text = ""
-        for index, prediction in enumerate(diagnosis_result):
-            text = text + f"{index + 1}. {prediction['disease'].cause}, Probability: {prediction['probability']:.4f}"
+        # text = ""
+        # for index, prediction in enumerate(diagnosis_result):
+        #     text = text + f"{index + 1}. {prediction['disease'].cause}, Probability: {prediction['probability']:.4f}"
         # return HttpResponse(text)
-        return redirect("diagnosis", result = diagnosis_result)    
+        request.session['results'] = diagnosis_result
+        return redirect('diagnosis')    
     return render(request, "detect.html", {})    
 
 def diagnosis(request):
-    result = request.GET.get("result")
-    return render(request, "diagnosis.html", results=result)
+    results = request.session['results']
+    return render(request, "diagnosis.html", {"results" : results})
