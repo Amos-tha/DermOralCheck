@@ -27,7 +27,8 @@ class Record(models.Model):
     disease = models.ForeignKey(Disease, on_delete=models.CASCADE,)
     recordDate = models.DateField(auto_now=True)
     recordTime = models.TimeField(auto_now=True)
-    disease_img = models.ImageField(upload_to='static/media')
+    probability = models.DecimalField(max_digits=5, decimal_places=4)
+    disease_img = models.ImageField(upload_to='static/media/')
 
 class Prescription(models.Model):
     disease = models.ForeignKey(Disease, on_delete=models.CASCADE,)
