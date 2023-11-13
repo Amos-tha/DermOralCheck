@@ -4,7 +4,9 @@
 
 {% block content %}
 <div class="col-6">
-    testing
+    {% if img %}
+    <img src="{{img.img}}" />
+    {% endif %}
 </div>
 <div class="col-6">
     {% if results %}

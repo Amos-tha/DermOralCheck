@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.core.files.storage import FileSystemStorage
 from django.db import connection
 from django.contrib import messages
-from .models import Account, Disease, Medicine, Record, Prescription
+from .models import Account, Disease, Medicine, Record, Prescription, Image
 
 import tensorflow as tf
 import numpy as np
@@ -69,7 +69,7 @@ def detect(request):
 
         # get the login user
         user = Account.objects.get(phoneNo=request.session['phone'])
-
+        disease_img = Image.objects.create(img=uploaded_file)
         # Create a list of predictions and their probabilities
         diagnosis_result = []
         for label, probability in zip(top_N_labels, top_N_probabilities):
@@ -82,7 +82,7 @@ def detect(request):
             record = Record.objects.create(patient=user, 
                                     disease=Disease.objects.filter(name=label).first(),
                                     probability=probability_formatted,
-                                    disease_img=uploaded_file)
+                                    disease_img=disease_img)
             
             if(probability_formatted > 0):
                 diagnosis_result.append(Disease.objects.filter(name=label).values().first())
@@ -91,10 +91,14 @@ def detect(request):
         # for index, prediction in enumerate(diagnosis_result):
         #     text = text + f"{index + 1}. {prediction['disease'].cause}, Probability: {prediction['probability']:.4f}"
         # return HttpResponse(text)
+        print(disease_img.img)
+        print(Image.objects.filter(img=disease_img.img).values().first())
         request.session['results'] = diagnosis_result
+        request.session['disease_img'] = Image.objects.filter(img=disease_img.img).values().first()
         return redirect('diagnosis')    
     return render(request, "detect.html", {})    
 
 def diagnosis(request):
     results = request.session['results']
-    return render(request, "diagnosis.html", {"results" : results})
+    img = request.session['disease_img']
+    return render(request, "diagnosis.html", {"results" : results, "img" : img})

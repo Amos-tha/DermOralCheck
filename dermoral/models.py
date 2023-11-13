@@ -22,13 +22,16 @@ class Medicine(models.Model):
     description = models.CharField(max_length=250)
     sideEffect = models.CharField(max_length=250)
 
+class Image(models.Model):
+    path = models.ImageField(upload_to='static/media/')
+
 class Record(models.Model):
     patient = models.ForeignKey(Account, on_delete=models.CASCADE,)
     disease = models.ForeignKey(Disease, on_delete=models.CASCADE,)
+    disease_img = models.ForeignKey(Image, on_delete=models.CASCADE,)
     recordDate = models.DateField(auto_now=True)
     recordTime = models.TimeField(auto_now=True)
     probability = models.DecimalField(max_digits=5, decimal_places=4)
-    disease_img = models.ImageField(upload_to='static/media/')
 
 class Prescription(models.Model):
     disease = models.ForeignKey(Disease, on_delete=models.CASCADE,)
