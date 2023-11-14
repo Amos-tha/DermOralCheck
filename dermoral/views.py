@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponse
-from django.core.files.storage import FileSystemStorage
+from datetime import datetime
+from django.utils import formats
 from django.db import connection
 from django.contrib import messages
 from .models import Account, Disease, Medicine, Record, Prescription, Image
@@ -9,7 +10,9 @@ from .models import Account, Disease, Medicine, Record, Prescription, Image
 import tensorflow as tf
 import numpy as np
 from io import BytesIO
+import boto3
 
+custombucket = 'fyp-website'
 # Load the trained model (this should be done only once when the server starts)
 model : tf.keras.Sequential = tf.keras.models.load_model('sure_model.h5')
 labels = ['Actinic Keratosis', 'Atopic Dermatitis', 'Basal Cell Carcinoma', 'Dermatofibroma', 'Eczema', 'Melanocytic Nevi', 'Melanoma', 'Pigmented Benign Keratosis', 'Seborrheic Keratosis', 'Squamous Cell Carcinoma', 'Vascular Lesion']
@@ -47,8 +50,6 @@ def detect(request):
     if request.method == 'POST':
         # Load and preprocess the input image
         uploaded_file = request.FILES['img'] 
-        # fs = FileSystemStorage(location="/static/media/")
-        # fs.save(uploaded_file.name, uploaded_file)
 
         # preprocess the uploaded image
         img = tf.keras.preprocessing.image.load_img(BytesIO(uploaded_file.read()), target_size=(128, 128))  # Adjust the target size
@@ -60,7 +61,7 @@ def detect(request):
         predictions = model.predict(img)
 
         # Get the top N predicted class indices and their corresponding probabilities
-        N = 3  # Adjust as needed
+        N = 3 
         top_N_indices = np.argsort(predictions[0])[::-1][:N]  # Get indices in descending order of probability
         top_N_probabilities = predictions[0][top_N_indices]
 
@@ -70,13 +71,18 @@ def detect(request):
         # get the login user
         user = Account.objects.get(phoneNo=request.session['phone'])
         disease_img = Image.objects.create(img=uploaded_file)
+
+        # # Uplaod image file in S3 #
+        # img_name = "img_" + str(user.name) + "_" + formats.date_format(datetime.now(), "DATETIME_FORMAT")
+        # uploaded_file.name = img_name
+        # s3 = boto3.resource("s3")
+        # s3.Bucket(custombucket).put_object(Key=img_name, Body=uploaded_file)
+        # # disease_img = Image.objects.create(path=uploaded_file)
+
         # Create a list of predictions and their probabilities
         diagnosis_result = []
         for label, probability in zip(top_N_labels, top_N_probabilities):
             probability_formatted = round(float(probability), 4)
-
-            # get the related disease object based on the name
-            # disease = Disease.objects.filter(name=label)
 
             # insert the new record
             record = Record.objects.create(patient=user, 
