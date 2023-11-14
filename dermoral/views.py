@@ -6,7 +6,6 @@ from django.utils import formats
 from django.db import connection
 from django.contrib import messages
 from .models import Account, Disease, Medicine, Record, Prescription, Image
-
 import tensorflow as tf
 import numpy as np
 from io import BytesIO
@@ -72,8 +71,8 @@ def detect(request):
         user = Account.objects.get(phoneNo=request.session['phone'])
         disease_img = Image.objects.create(img=uploaded_file)
 
+        img_name = "img_" + str(user.name) + "_" + formats.date_format(datetime.now(), "DATETIME_FORMAT")
         # # Uplaod image file in S3 #
-        # img_name = "img_" + str(user.name) + "_" + formats.date_format(datetime.now(), "DATETIME_FORMAT")
         # uploaded_file.name = img_name
         # s3 = boto3.resource("s3")
         # s3.Bucket(custombucket).put_object(Key=img_name, Body=uploaded_file)
