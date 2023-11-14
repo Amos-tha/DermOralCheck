@@ -20,8 +20,8 @@ labels = ['Actinic Keratosis', 'Atopic Dermatitis', 'Basal Cell Carcinoma', 'Der
 def login(request):
     if request.method == 'POST':
         try:
-            user = Account.objects.get(phoneNo=request.POST.get('phone'),
-                                    password=request.POST.get('psw'))
+            user = Account.objects.filter(phoneNo=request.POST.get('phone'),
+                                    password=request.POST.get('psw')).first()
             
             if user:
                 request.session['phone'] = user.phoneNo
@@ -69,14 +69,15 @@ def detect(request):
 
         # get the login user
         user = Account.objects.get(phoneNo=request.session['phone'])
-        disease_img = Image.objects.create(img=uploaded_file)
 
-        img_name = "img_" + str(user.name) + "_" + formats.date_format(datetime.now(), "DATETIME_FORMAT")
+        img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
+
         # # Uplaod image file in S3 #
-        # uploaded_file.name = img_name
         # s3 = boto3.resource("s3")
         # s3.Bucket(custombucket).put_object(Key=img_name, Body=uploaded_file)
-        # # disease_img = Image.objects.create(path=uploaded_file)
+
+        uploaded_file.name = img_name
+        disease_img = Image.objects.create(path=uploaded_file)
 
         # Create a list of predictions and their probabilities
         diagnosis_result = []
@@ -90,16 +91,16 @@ def detect(request):
                                     disease_img=disease_img)
             
             if(probability_formatted > 0):
-                diagnosis_result.append(Disease.objects.filter(name=label).values().first())
+                diagnosis_result.append({'disease' : Disease.objects.filter(name=label).values().first(), 'probability' : record.probability})
         # Print or return the list of predictions
         # text = ""
         # for index, prediction in enumerate(diagnosis_result):
         #     text = text + f"{index + 1}. {prediction['disease'].cause}, Probability: {prediction['probability']:.4f}"
         # return HttpResponse(text)
-        print(disease_img.img)
-        print(Image.objects.filter(img=disease_img.img).values().first())
+        print(disease_img.path)
+        # print(Image.objects.filter(img=disease_img.img).values().first())
         request.session['results'] = diagnosis_result
-        request.session['disease_img'] = Image.objects.filter(img=disease_img.img).values().first()
+        request.session['disease_img'] = Image.objects.filter(path=disease_img.path).values().first()
         return redirect('diagnosis')    
     return render(request, "detect.html", {})    
 

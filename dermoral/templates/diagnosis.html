@@ -5,7 +5,7 @@
 {% block content %}
 <div class="col-6">
     {% if img %}
-    <img src="{{img.img}}" />
+    <img src="{{img.path}}" />
     {% endif %}
 </div>
 <div class="col-6">
@@ -14,23 +14,34 @@
         {% for result in results %}
         <div class="accordion-item">
             <h2 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#result{{result.id}}" aria-expanded="false"
-                    aria-controls="result{{result.id}}"><strong>{{result.name}}</strong></button>
+                <div class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#result{{result.disease.id}}" aria-expanded="false"
+                    aria-controls="result{{result.disease.id}}">
+                    <strong>{{result.disease.name}}</strong>
+                    <p>{{result.probability}}</p>
+                </div>
+                <!-- <div class="accordion-header collapsed fw-bold fs-6 px-2" data-bs-toggle="collapse"
+                data-bs-target="#result{{result.disease.id}}" aria-expanded="false"
+                aria-controls="result{{result.disease.id}}" style="cursor:pointer;">
+                <div class="d-flex flex-row justify-content-between">
+                    <label>{{result.disease.name}}</label>
+                    <p>{{result.probability}}</p>
+                </div> -->
             </h2>
-            <div id="result{{result.id}}" class="accordion-collapse collapse" data-bs-parent="#diagnosisResults">
+            <div id="result{{result.disease.id}}" class="accordion-collapse collapse"
+                data-bs-parent="#diagnosisResults">
                 <div class="accordion-body">
                     <div class="border-bottom mb-3 pb-2">
                         <strong style="color: rgba(73, 69, 79, 0.8)">Description<br /></strong>
-                        {{result.description}}
+                        {{result.disease.description}}
                     </div>
                     <div class="border-bottom mb-3 pb-2">
                         <strong style="color: rgba(73, 69, 79, 0.8)">Symptom<br /></strong>
-                        {{result.symptom}}
+                        {{result.disease.symptom}}
                     </div>
                     <div class="border-bottom pb-2">
                         <strong style="color: rgba(73, 69, 79, 0.8)">Cause<br /></strong>
-                        {{result.cause}}
+                        {{result.disease.cause}}
                     </div>
                 </div>
             </div>
