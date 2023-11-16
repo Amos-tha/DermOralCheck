@@ -109,5 +109,7 @@ def diagnosis(request):
     return render(request, "diagnosis.html", {"results" : results, "img" : img})
 
 def home(request):
-
     return render(request, "home.html")
+
+def oralhome(request):
+    return render(request, "oralHome.html")

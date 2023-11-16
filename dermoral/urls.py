@@ -6,5 +6,6 @@ urlpatterns = [
     path('signup', views.signup, name="signup"),
     path('detect', views.detect, name="detect"),
     path('diagnosis', views.diagnosis, name="diagnosis"),
-    path('home', views.home, name="home") #need do a view file for this
+    path('home', views.home, name="home"),
+    path('oralhome', views.oralhome, name="oralhome")
 ]
