@@ -108,3 +108,9 @@ def diagnosis(request):
     results = request.session['results']
     img = request.session['disease_img']
     return render(request, "diagnosis.html", {"results" : results, "img" : img})
+
+def home(request):
+    return render(request, "home.html")
+
+def oralhome(request):
+    return render(request, "oralHome.html")
