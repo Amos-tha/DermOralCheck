@@ -114,3 +114,6 @@ def home(request):
 
 def oralhome(request):
     return render(request, "oralHome.html")
+
+def skinhome(request):
+    return render(request, "skinHome.html")
