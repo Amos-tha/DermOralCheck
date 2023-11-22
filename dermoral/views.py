@@ -151,3 +151,7 @@ def oralhome(request):
 
 def skinhome(request):
     return render(request, "skinHome.html")
+
+def map(request):
+    return render(request, "map.html")
+
