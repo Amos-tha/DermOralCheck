@@ -116,3 +116,6 @@ def oralhome(request):
 
 def skinhome(request):
     return render(request, "skinHome.html")
+
+def profile(request):
+    return render(request, "profile.html")
