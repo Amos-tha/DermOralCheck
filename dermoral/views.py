@@ -96,6 +96,7 @@ def detect(request):
             if(probability_formatted > 0):
                 diagnosis_result.append({'disease' : Disease.objects.filter(name=label).values().first(), 'probability' : record.probability})
 
+        medicine_list = recommendation(diagnosis_result)
         request.session['results'] = diagnosis_result
         request.session['disease_img'] = Image.objects.filter(path=disease_img.path).values().first()
         request.session['prescriptions'] = prescriptions
@@ -103,7 +104,14 @@ def detect(request):
     return render(request, "detect.html", {})   
 
 def recommendation(results):
-    return render(request, 'recommendations.html', context) 
+    medicine_list = []
+    for disease in results:
+        # print(disease['disease']['id'])
+        mid = Prescription.objects.filter(disease=disease['disease']['id']).values('medicine_id').first()
+        if mid:
+            medicine_list.append(Medicine.objects.filter(pk=mid['medicine_id']).values().first())
+
+    return medicine_list
     
 
 # def recommendation(request):

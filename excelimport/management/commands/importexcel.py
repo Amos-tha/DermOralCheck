@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 import pandas as pd
 from django.db import connection
-from dermoral.models import Disease, Record, Medicine  # Replace with your actual model
+from dermoral.models import Disease, Record, Medicine, Prescription  # Replace with your actual model
 
 class Command(BaseCommand):
     help = 'Import data from Excel into Django model'
@@ -9,6 +9,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         Disease.objects.all().delete()
         Medicine.objects.all().delete()
+        Prescription.objects.all().delete()
         Record.objects.all().delete()
 
         disease_path = 'C:/Users/ASUS/Desktop/Disease.xlsx'  # Replace with the actual file path
@@ -37,6 +38,7 @@ class Command(BaseCommand):
                 # Add other fields as needed
             )
             tInstance.save()
+
 
         self.stdout.write(self.style.SUCCESS('Data imported successfully.'))
     
