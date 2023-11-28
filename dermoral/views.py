@@ -104,12 +104,18 @@ def detect(request):
     return render(request, "detect.html", {})   
 
 def recommendation(results):
-    medicine_list = []
+    medicine_list = {}
     for disease in results:
         # print(disease['disease']['id'])
         mid = Prescription.objects.filter(disease=disease['disease']['id']).values('medicine_id').first()
         if mid:
-            medicine_list.append(Medicine.objects.filter(pk=mid['medicine_id']).values().first())
+            # Check if the disease name is already a key in the dictionary
+            if disease['disease']['name'] in medicine_list:
+                # If it is, append the new medicine data to the existing list of values
+                medicine_list[disease['disease']['name']].append(Medicine.objects.filter(pk=mid['medicine_id']).values().first())
+            else:
+                # If it's not, create a new list with the current medicine data as the first element
+                medicine_list[disease['disease']['name']] = [Medicine.objects.filter(pk=mid['medicine_id']).values().first()]
 
     return medicine_list
     
