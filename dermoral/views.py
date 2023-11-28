@@ -177,3 +177,5 @@ def skinhome(request):
 def map(request):
     return render(request, "map.html")
 
+def profile(request):
+    return render(request, "profile.html")
