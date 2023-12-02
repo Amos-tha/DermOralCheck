@@ -9,6 +9,6 @@ urlpatterns = [
     path('home', views.home, name="home"),
     path('skinhome', views.skinhome, name='skinhome'),
     path('oralhome', views.oralhome, name='oralhome'),
-    path('map', views.map, name="map")
-    path('profile', views.profile, name='profile')
+    path('map', views.map, name="map"),
+    path('profile', views.profile, name='profile'),
 ]

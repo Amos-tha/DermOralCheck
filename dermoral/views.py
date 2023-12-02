@@ -5,6 +5,7 @@ from datetime import datetime
 from django.db import connection
 from django.contrib import messages
 from .models import Account, Disease, Medicine, Record, Prescription, Image
+from django.forms.models import model_to_dict
 import tensorflow as tf
 import numpy as np
 from io import BytesIO
@@ -58,6 +59,7 @@ def detect(request):
 
         # Make predictions
         predictions = model.predict(img)
+        print(predictions)
 
         # Get the top N predicted class indices and their corresponding probabilities
         N = 3 
@@ -65,7 +67,7 @@ def detect(request):
         top_N_probabilities = predictions[0][top_N_indices]
 
         # Map class indices to label names
-        top_N_labels = [labels[index] for index in top_N_indices]
+        # top_N_labels = [labels[index] for index in top_N_indices]
 
         # get the login user
         user = Account.objects.get(phoneNo=request.session['phone'])
@@ -79,86 +81,64 @@ def detect(request):
         uploaded_file.name = img_name
         disease_img = Image.objects.create(path=uploaded_file)
 
+
         # Create a list of predictions and their probabilities
         diagnosis_result = []
-        prescriptions = []
-        for label, probability in zip(top_N_labels, top_N_probabilities):
+        medicine_list = []
+
+        for index, probability in zip(top_N_indices, top_N_probabilities):
             probability_formatted = round(float(probability), 4)
-
-            # insert the new record
-            record = Record.objects.create(patient=user, 
-                                    disease=Disease.objects.filter(name=label).first(),
-                                    probability=probability_formatted,
-                                    disease_img=disease_img)
-            # print(record.disease.pk)
-            prescriptions.append(record.disease.pk)
-
             if(probability_formatted > 0):
-                diagnosis_result.append({'disease' : Disease.objects.filter(name=label).values().first(), 'probability' : record.probability})
+                disease = Disease.objects.filter(pk=index).first()
+                dict_disease = model_to_dict(disease)
 
-        medicine_list = recommendation(diagnosis_result)
+                # print(dict_disease)
+                # print(dict_disease['name'])
+                print("test")
+                # insert the new record
+                record = Record.objects.create(patient=user, 
+                                        disease=disease,
+                                        probability=probability_formatted,
+                                        disease_img=disease_img)
+                # print(record.disease.pk)
+                mids = Prescription.objects.filter(disease=disease).values_list('medicine_id', flat=True)
+
+                if mids.exists():
+                    for mid in mids:
+                        medicine_list.append(Medicine.objects.filter(pk=mid).values().first())
+                        print(mid)
+                else:
+                    medicine_list = "Do not have any recommendation yet..."
+
+                diagnosis_result.append({'disease' : dict_disease, 'probability' : record.probability, 'medicines' : medicine_list})
+                
+                # # check the medicine found?
+                # if mid:
+                #     # If it's not, create a new list with the current medicine data as the first element
+                #     medicine_list[dict_disease['name']] = [Medicine.objects.filter(pk=mid['medicine_id']).values_list()]
+
         request.session['results'] = diagnosis_result
         request.session['disease_img'] = Image.objects.filter(path=disease_img.path).values().first()
-        request.session['prescriptions'] = prescriptions
         return redirect('diagnosis')    
     return render(request, "detect.html", {})   
 
-def recommendation(results):
-    medicine_list = {}
-    for disease in results:
-        # print(disease['disease']['id'])
-        mid = Prescription.objects.filter(disease=disease['disease']['id']).values('medicine_id').first()
-        if mid:
-            # Check if the disease name is already a key in the dictionary
-            if disease['disease']['name'] in medicine_list:
-                # If it is, append the new medicine data to the existing list of values
-                medicine_list[disease['disease']['name']].append(Medicine.objects.filter(pk=mid['medicine_id']).values().first())
-            else:
-                # If it's not, create a new list with the current medicine data as the first element
-                medicine_list[disease['disease']['name']] = [Medicine.objects.filter(pk=mid['medicine_id']).values().first()]
+# back up in case atas one broken
+# def recommendation(results):
+#     medicine_list = {}
+#     for disease in results:
+#         # print(disease['disease']['id'])
+#         mid = Prescription.objects.filter(disease=disease['disease']['id']).values('medicine_id').first()
+#         if mid:
+#             # Check if the disease name is already a key in the dictionary
+#             if disease['disease']['name'] in medicine_list:
+#                 # If it is, append the new medicine data to the existing list of values
+#                 medicine_list[disease['disease']['name']].append(Medicine.objects.filter(pk=mid['medicine_id']).values().first())
+#             else:
+#                 # If it's not, create a new list with the current medicine data as the first element
+#                 medicine_list[disease['disease']['name']] = [Medicine.objects.filter(pk=mid['medicine_id']).values().first()]
 
-    return medicine_list
-    
-
-# def recommendation(request):
-#     # Read patient preferences and health conditions from Excel
-#     patient_data = pd.read_excel("patient_data.xlsx")
-
-#     # Fetch user ID or any identifier from the request
-#     user_id = request.GET.get('user_id', 'default_user')
-
-#     # Get user preferences and health condition from the Excel data
-#     user_preferences = patient_data.loc[patient_data['user_id'] == user_id, 'preference'].values[0]
-#     user_health_condition = patient_data.loc[patient_data['user_id'] == user_id, 'health_condition'].values[0]
-
-#     # Retrieve medicines data from the database
-#     medicines = Medicine.objects.filter(health_condition=user_health_condition)
-
-#     # Convert medicines data to a Pandas DataFrame
-#     medicines_df = pd.DataFrame(list(medicines.values()))
-
-#     # Filter medicines based on user preference
-#     filtered_medicines = medicines_df[medicines_df['preference'] == user_preferences]
-
-#     # Calculate components for the weighted average
-#     v = filtered_medicines['feedback_count']
-#     R = filtered_medicines['average_rating']
-#     C = R.mean()
-#     m = v.quantile(0.70)
-
-#     # Calculate the weighted average
-#     filtered_medicines['weighted_average'] = ((R * v) + (C * m)) / (v + m)
-
-#     # Sort medicines based on weighted average and average rating
-#     sorted_medicines = filtered_medicines.sort_values(['weighted_average', 'average_rating'], ascending=[False, False])
-
-#     # Display the top recommended medicines
-#     top_medicines = sorted_medicines[['name', 'feedback_count', 'average_rating', 'weighted_average', 'preference']].head(20)
-
-#     # Pass the recommended medicines and user information to the template
-#     context = {'top_medicines': top_medicines, 'user_preferences': user_preferences, 'user_health_condition': user_health_condition}
-
-#     return render(request, 'recommendations.html', context) 
+#     print(medicine_list['Melanoma'][0])
+#     return medicine_list
 
 def diagnosis(request):
     results = request.session['results']
