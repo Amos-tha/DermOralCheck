@@ -81,7 +81,7 @@ DATABASES = {
         'NAME': 'fyp',
         'USER': 'admin',
         'PASSWORD': 'abcd1234',
-        'HOST': 'fyp.caldwcg5mkux.us-east-1.rds.amazonaws.com',
+        'HOST': 'fyp.cgsytlxmt2zj.us-east-1.rds.amazonaws.com',
         'POST': '3306',
     }
 }
