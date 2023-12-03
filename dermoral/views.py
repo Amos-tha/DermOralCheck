@@ -120,11 +120,11 @@ def detect(request):
                 #     medicine_list[dict_disease['name']] = [Medicine.objects.filter(pk=mid['medicine_id']).values_list()]
 
         request.session['results'] = diagnosis_result
-        request.session['disease_img'] = Image.objects.filter(img=disease_img.img).values().first()
-        return redirect('diagnosisoral')    
-    return render(request, "detectOral.html", {})
+        request.session['disease_img'] = Image.objects.filter(path=disease_img.path).values().first()
+        return redirect('diagnosis')    
+    return render(request, "detect.html", {})
 
-def diagnosisoral(request):
+def diagnosis(request):
     results = request.session['results']
     img = request.session['disease_img']
     return render(request, "diagnosis.html", {"results" : results, "img" : img})
