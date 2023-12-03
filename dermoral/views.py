@@ -15,7 +15,9 @@ import boto3
 custombucket = 'fyp-website'
 # Load the trained model (this should be done only once when the server starts)
 model : tf.keras.Sequential = tf.keras.models.load_model('sure_model.h5')
+oralModel : tf.keras.Sequential = tf.keras.models.load_model('88%.keras')
 labels = ['Actinic Keratosis', 'Atopic Dermatitis', 'Basal Cell Carcinoma', 'Dermatofibroma', 'Eczema', 'Melanocytic Nevi', 'Melanoma', 'Pigmented Benign Keratosis', 'Seborrheic Keratosis', 'Squamous Cell Carcinoma', 'Vascular Lesion']
+oralLabels = ['Calculus','Data Caries','Gingivitis','Hypodontia','Mouth Ulcer','Oral Cancer','Discoloration']
 
 # Create your views here.
 def login(request):
@@ -118,29 +120,11 @@ def detect(request):
                 #     medicine_list[dict_disease['name']] = [Medicine.objects.filter(pk=mid['medicine_id']).values_list()]
 
         request.session['results'] = diagnosis_result
-        request.session['disease_img'] = Image.objects.filter(path=disease_img.path).values().first()
-        return redirect('diagnosis')    
-    return render(request, "detect.html", {})   
+        request.session['disease_img'] = Image.objects.filter(img=disease_img.img).values().first()
+        return redirect('diagnosisoral')    
+    return render(request, "detectOral.html", {})
 
-# back up in case atas one broken
-# def recommendation(results):
-#     medicine_list = {}
-#     for disease in results:
-#         # print(disease['disease']['id'])
-#         mid = Prescription.objects.filter(disease=disease['disease']['id']).values('medicine_id').first()
-#         if mid:
-#             # Check if the disease name is already a key in the dictionary
-#             if disease['disease']['name'] in medicine_list:
-#                 # If it is, append the new medicine data to the existing list of values
-#                 medicine_list[disease['disease']['name']].append(Medicine.objects.filter(pk=mid['medicine_id']).values().first())
-#             else:
-#                 # If it's not, create a new list with the current medicine data as the first element
-#                 medicine_list[disease['disease']['name']] = [Medicine.objects.filter(pk=mid['medicine_id']).values().first()]
-
-#     print(medicine_list['Melanoma'][0])
-#     return medicine_list
-
-def diagnosis(request):
+def diagnosisoral(request):
     results = request.session['results']
     img = request.session['disease_img']
     return render(request, "diagnosis.html", {"results" : results, "img" : img})
@@ -159,3 +143,4 @@ def map(request):
 
 def profile(request):
     return render(request, "profile.html")
+    # return render(request, "diagnosisOral.html", {"results" : results, "img" : img})

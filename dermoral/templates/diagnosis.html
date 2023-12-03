@@ -3,12 +3,17 @@
 {% block title %} Diagnosis Result {% endblock %}
 
 {% block content %}
-<div class="col-6">
+<div class="col-6 border border-3">
     {% if img %}
-    <img src="{{img.path}}" />
+    <div class="card text-center ms-3 me-3 mt-3 shadow-lg p-3">
+        <div class="card-header">
+          <strong>DISEASE IMAGE</strong>
+        </div>
+        <img src="{{img.path}}" class="card-img-top" alt="Disease Image">
+      </div>
     {% endif %}
 </div>
-<div class="col-6">
+<div class="col-6 border border-3">
     {% if results %}
     <div class="accordion" id="diagnosisResults">
         {% for result in results %}

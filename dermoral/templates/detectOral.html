@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %} Home {% endblock %}
+
+{% block content %}
+<form action="" method="post" enctype="multipart/form-data">
+<div class="row" style="display: flex; justify-content: center;">
+    <div class="fs-2 fw-bold text-center mb-2 mt-5 pb-2 pt-5">Please select a skin disease image to upload</div>
+    <div class="row" style="display: flex; align-items: center;">
+        <div class="col" style="display: flex; justify-content: center;">
+            {% csrf_token %}
+            <input class="form-control form-control-lg" type="file" accept="image/*" name="img">
+        </div>
+        <div class="col" style="display: flex; justify-content: center;">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </div>
+</div>
+</form>
+{% endblock %}
