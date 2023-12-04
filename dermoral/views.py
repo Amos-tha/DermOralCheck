@@ -125,7 +125,7 @@ def profile(request):
 def detectoral(request):
     if request.method == 'POST':
         # Load and preprocess the input image
-        uploaded_file = request.FILES['oralImg'] 
+        uploaded_file = request.FILES['img'] 
 
         # preprocess the uploaded image
         img = tf.keras.preprocessing.image.load_img(BytesIO(uploaded_file.read()), target_size=(96, 96))  # Adjust the target size
