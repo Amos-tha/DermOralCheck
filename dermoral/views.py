@@ -2,13 +2,14 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponse
 from datetime import datetime
-from django.utils import formats
 from django.db import connection
 from django.contrib import messages
 from .models import Account, Disease, Medicine, Record, Prescription, Image
+from django.forms.models import model_to_dict
 import tensorflow as tf
 import numpy as np
 from io import BytesIO
+import pandas as pd
 import boto3
 
 custombucket = 'fyp-website'
@@ -22,8 +23,8 @@ oralLabels = ['Calculus','Data Caries','Gingivitis','Hypodontia','Mouth Ulcer','
 def login(request):
     if request.method == 'POST':
         try:
-            user = Account.objects.get(phoneNo=request.POST.get('phone'),
-                                    password=request.POST.get('psw'))
+            user = Account.objects.filter(phoneNo=request.POST.get('phone'),
+                                    password=request.POST.get('psw')).first()
             
             if user:
                 request.session['phone'] = user.phoneNo
@@ -60,6 +61,7 @@ def detect(request):
 
         # Make predictions
         predictions = model.predict(img)
+        print(predictions)
 
         # Get the top N predicted class indices and their corresponding probabilities
         N = 3 
@@ -67,7 +69,7 @@ def detect(request):
         top_N_probabilities = predictions[0][top_N_indices]
 
         # Map class indices to label names
-        top_N_labels = [labels[index] for index in top_N_indices]
+        # top_N_labels = [labels[index] for index in top_N_indices]
 
         # get the login user
         user = Account.objects.get(phoneNo=request.session['phone'])
@@ -81,29 +83,46 @@ def detect(request):
         uploaded_file.name = img_name
         disease_img = Image.objects.create(path=uploaded_file)
 
+
         # Create a list of predictions and their probabilities
         diagnosis_result = []
-        prescriptions = []
-        for label, probability in zip(top_N_labels, top_N_probabilities):
+        medicine_list = []
+
+        for index, probability in zip(top_N_indices, top_N_probabilities):
             probability_formatted = round(float(probability), 4)
-
-            # insert the new record
-            record = Record.objects.create(patient=user, 
-                                    disease=Disease.objects.filter(name=label).first(),
-                                    probability=probability_formatted,
-                                    disease_img=disease_img)
-            # print(record.disease.pk)
-            prescriptions.append(record.disease.pk)
-
             if(probability_formatted > 0):
-                diagnosis_result.append({'disease' : Disease.objects.filter(name=label).values().first(), 'probability' : record.probability})
+                disease = Disease.objects.filter(pk=index).first()
+                dict_disease = model_to_dict(disease)
 
-        # medicine_list = recommendation(diagnosis_result)
+                # print(dict_disease)
+                # print(dict_disease['name'])
+                print("test")
+                # insert the new record
+                record = Record.objects.create(patient=user, 
+                                        disease=disease,
+                                        probability=probability_formatted,
+                                        disease_img=disease_img)
+                # print(record.disease.pk)
+                mids = Prescription.objects.filter(disease=disease).values_list('medicine_id', flat=True)
+
+                if mids.exists():
+                    for mid in mids:
+                        medicine_list.append(Medicine.objects.filter(pk=mid).values().first())
+                        print(mid)
+                else:
+                    medicine_list = "Do not have any recommendation yet..."
+
+                diagnosis_result.append({'disease' : dict_disease, 'probability' : record.probability, 'medicines' : medicine_list})
+                
+                # # check the medicine found?
+                # if mid:
+                #     # If it's not, create a new list with the current medicine data as the first element
+                #     medicine_list[dict_disease['name']] = [Medicine.objects.filter(pk=mid['medicine_id']).values_list()]
+
         request.session['results'] = diagnosis_result
         request.session['disease_img'] = Image.objects.filter(path=disease_img.path).values().first()
-        request.session['prescriptions'] = prescriptions
         return redirect('diagnosis')    
-    return render(request, "detect.html", {})     
+    return render(request, "detect.html", {})
 
 def diagnosis(request):
     results = request.session['results']
@@ -118,6 +137,9 @@ def oralhome(request):
 
 def skinhome(request):
     return render(request, "skinHome.html")
+
+def map(request):
+    return render(request, "map.html")
 
 def profile(request):
     return render(request, "profile.html")
@@ -184,3 +206,4 @@ def diagnosisoral(request):
     results = request.session['results']
     img = request.session['disease_img']
     return render(request, "diagnosisOral.html", {"results" : results, "img" : img})
+    # return render(request, "diagnosisOral.html", {"results" : results, "img" : img})

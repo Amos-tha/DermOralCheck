@@ -9,7 +9,8 @@ urlpatterns = [
     path('home', views.home, name="home"),
     path('skinhome', views.skinhome, name='skinhome'),
     path('oralhome', views.oralhome, name='oralhome'),
+    path('map', views.map, name="map"),
     path('profile', views.profile, name='profile'),
-    path('detectoral', views.detectoral, name='detectoral'),
-    path('diagnosisoral', views.diagnosisoral, name="diagnosisoral")
+    # path('detectoral', views.detectoral, name='detectoral'),
+    # path('diagnosisoral', views.diagnosisoral, name="diagnosisoral")
 ]

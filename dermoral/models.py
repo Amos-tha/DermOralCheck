@@ -19,7 +19,7 @@ class Disease(models.Model):
 
 class Medicine(models.Model):
     name = models.CharField(max_length=250)
-    description = models.CharField(max_length=250)
+    description = models.TextField(max_length=700)
     sideEffect = models.CharField(max_length=250)
 
 class Image(models.Model):
