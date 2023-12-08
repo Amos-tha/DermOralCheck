@@ -17,7 +17,7 @@ custombucket = 'fyp-website'
 model : tf.keras.Sequential = tf.keras.models.load_model('sure_model.h5')
 oralModel : tf.keras.Sequential = tf.keras.models.load_model('88%.keras')
 labels = ['Actinic Keratosis', 'Atopic Dermatitis', 'Basal Cell Carcinoma', 'Dermatofibroma', 'Eczema', 'Melanocytic Nevi', 'Melanoma', 'Pigmented Benign Keratosis', 'Seborrheic Keratosis', 'Squamous Cell Carcinoma', 'Vascular Lesion']
-oralLabels = ['Calculus','Data Caries','Gingivitis','Hypodontia','Mouth Ulcer','Oral Cancer','Discoloration']
+oralLabels = ['Calculus','Dental Caries','Gingivitis','Hypodontia','Mouth Ulcer','Oral Cancer','Tooth Discoloration']
 
 # Create your views here.
 def login(request):
@@ -28,7 +28,7 @@ def login(request):
             
             if user:
                 request.session['phone'] = user.phoneNo
-                return redirect("detect")
+                return redirect("detectoral")
                 
         except Account.DoesNotExist:
             messages.error(request, 'The phone number or password is wrong.')
@@ -82,7 +82,6 @@ def detect(request):
 
         uploaded_file.name = img_name
         disease_img = Image.objects.create(path=uploaded_file)
-
 
         # Create a list of predictions and their probabilities
         diagnosis_result = []
@@ -155,8 +154,9 @@ def detectoral(request):
         img = np.array(img).reshape(-1, 96, 96, 3)
         img = img / 255.0  # Normalize pixel values (if not already normalized during training)
 
-        # Make predictions
+       # Make predictions
         predictions = oralModel.predict(img)
+        print(predictions)
 
         # Get the top N predicted class indices and their corresponding probabilities
         N = 3 
@@ -168,37 +168,53 @@ def detectoral(request):
 
         # get the login user
         user = Account.objects.get(phoneNo=request.session['phone'])
-        disease_img = Image.objects.create(img=uploaded_file)
 
-        img_name = "img_" + str(user.name) + "_" + formats.date_format(datetime.now(), "DATETIME_FORMAT")
+        img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
+
         # # Uplaod image file in S3 #
-        # uploaded_file.name = img_name
         # s3 = boto3.resource("s3")
         # s3.Bucket(custombucket).put_object(Key=img_name, Body=uploaded_file)
-        # # disease_img = Image.objects.create(path=uploaded_file)
+
+        uploaded_file.name = img_name
+        disease_img = Image.objects.create(path=uploaded_file)
 
         # Create a list of predictions and their probabilities
         diagnosis_result = []
+        medicine_list = []
+
         for label, probability in zip(top_N_labels, top_N_probabilities):
             probability_formatted = round(float(probability), 4)
-
-            # insert the new record
-            record = Record.objects.create(patient=user, 
-                                    disease=Disease.objects.filter(name=label).first(),
-                                    probability=probability_formatted,
-                                    disease_img=disease_img)
-            
             if(probability_formatted > 0):
-                diagnosis_result.append(Disease.objects.filter(name=label).values().first())
-        # Print or return the list of predictions
-        # text = ""
-        # for index, prediction in enumerate(diagnosis_result):
-        #     text = text + f"{index + 1}. {prediction['disease'].cause}, Probability: {prediction['probability']:.4f}"
-        # return HttpResponse(text)
-        print(disease_img.img)
-        print(Image.objects.filter(img=disease_img.img).values().first())
+                disease = Disease.objects.filter(name=label).first()
+                dict_disease = model_to_dict(disease)
+
+                # print(dict_disease)
+                # print(dict_disease['name'])
+                print("test")
+                # insert the new record
+                record = Record.objects.create(patient=user, 
+                                        disease=disease,
+                                        probability=probability_formatted,
+                                        disease_img=disease_img)
+                # print(record.disease.pk)
+                mids = Prescription.objects.filter(disease=disease).values_list('medicine_id', flat=True)
+
+                if mids.exists():
+                    for mid in mids:
+                        medicine_list.append(Medicine.objects.filter(pk=mid).values().first())
+                        print(mid)
+                else:
+                    medicine_list = []
+
+                diagnosis_result.append({'disease' : dict_disease, 'probability' : record.probability, 'medicines' : medicine_list})
+                
+                # # check the medicine found?
+                # if mid:
+                #     # If it's not, create a new list with the current medicine data as the first element
+                #     medicine_list[dict_disease['name']] = [Medicine.objects.filter(pk=mid['medicine_id']).values_list()]
+
         request.session['results'] = diagnosis_result
-        request.session['disease_img'] = Image.objects.filter(img=disease_img.img).values().first()
+        request.session['disease_img'] = Image.objects.filter(path=disease_img.path).values().first()
         return redirect('diagnosisoral')    
     return render(request, "detectOral.html", {})
 
