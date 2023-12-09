@@ -69,7 +69,7 @@ def detect(request):
         top_N_probabilities = predictions[0][top_N_indices]
 
         # Map class indices to label names
-        # top_N_labels = [labels[index] for index in top_N_indices]
+        top_N_labels = [oralLabels[index] for index in top_N_indices]
 
         # get the login user
         user = Account.objects.get(phoneNo=request.session['phone'])
@@ -87,10 +87,10 @@ def detect(request):
         diagnosis_result = []
         medicine_list = []
 
-        for index, probability in zip(top_N_indices, top_N_probabilities):
+        for label, probability in zip(top_N_labels, top_N_probabilities):
             probability_formatted = round(float(probability), 4)
             if(probability_formatted > 0):
-                disease = Disease.objects.filter(pk=index).first()
+                disease = Disease.objects.filter(name=label).first()
                 dict_disease = model_to_dict(disease)
 
                 # print(dict_disease)
@@ -109,7 +109,7 @@ def detect(request):
                         medicine_list.append(Medicine.objects.filter(pk=mid).values().first())
                         print(mid)
                 else:
-                    medicine_list = "Do not have any recommendation yet..."
+                    medicine_list = []
 
                 diagnosis_result.append({'disease' : dict_disease, 'probability' : record.probability, 'medicines' : medicine_list})
                 
