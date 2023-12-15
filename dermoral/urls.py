@@ -12,5 +12,6 @@ urlpatterns = [
     path('map', views.map, name="map"),
     path('profile', views.profile, name='profile'),
     path('detectoral', views.detectoral, name='detectoral'),
-    path('diagnosisoral', views.diagnosisoral, name="diagnosisoral")
+    path('diagnosisoral', views.diagnosisoral, name="diagnosisoral"),
+    path('camera', views.live_cam, name='livecamera'),
 ]

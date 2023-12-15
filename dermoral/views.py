@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.http import HttpResponse
+from django.http import StreamingHttpResponse
 from datetime import datetime
 from django.db import connection
 from django.contrib import messages
@@ -10,7 +10,10 @@ import tensorflow as tf
 import numpy as np
 from io import BytesIO
 import pandas as pd
+import cv2
+import threading
 import boto3
+from django.views.decorators import gzip
 
 custombucket = 'fyp-website'
 # Load the trained model (this should be done only once when the server starts)
@@ -19,7 +22,6 @@ oralModel : tf.keras.Sequential = tf.keras.models.load_model('88%.keras')
 labels = ['Actinic Keratosis', 'Atopic Dermatitis', 'Basal Cell Carcinoma', 'Dermatofibroma', 'Eczema', 'Melanocytic Nevi', 'Melanoma', 'Pigmented Benign Keratosis', 'Seborrheic Keratosis', 'Squamous Cell Carcinoma', 'Vascular Lesion']
 oralLabels = ['Calculus','Dental Caries','Gingivitis','Hypodontia','Mouth Ulcer','Oral Cancer','Tooth Discoloration']
 
-# Create your views here.
 def login(request):
     if request.method == 'POST':
         try:
@@ -28,12 +30,11 @@ def login(request):
             
             if user:
                 request.session['phone'] = user.phoneNo
-                return redirect("detectoral")
+                return redirect("home")
                 
         except Account.DoesNotExist:
             messages.error(request, 'The phone number or password is wrong.')
             
-
     return render(request, "login.html", {})
 
 def signup(request):
@@ -223,3 +224,43 @@ def diagnosisoral(request):
     img = request.session['disease_img']
     return render(request, "diagnosisOral.html", {"results" : results, "img" : img})
     # return render(request, "diagnosisOral.html", {"results" : results, "img" : img})
+
+# read camera
+class VideoCamera(object):
+    def __init__(self) :
+        self.video = cv2.VideoCapture(0)
+        (self.grabbed, self.frame) = self.video.read()
+        threading.Thread(target=self.update, args=()).start()
+
+    def __del__(self):
+        self.video.release()
+
+    def get_frame(self):
+        image = self.frame
+        _, jpeg = cv2.imencode('.jpg', image)
+        return jpeg.tobytes()
+
+    def update(self):
+        while True:
+            (self.grabbed, self.frame) = self.video.read()
+
+    def stop(self):
+        self.is_running = False
+        self.thread.join()
+
+def cam(camera):
+    while True:
+        frame = camera.get_frame()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\n' + frame + b'\r\n\r\n')
+
+@gzip.gzip_page
+def live_cam(request):
+    try:
+        camera = VideoCamera()
+        return StreamingHttpResponse(cam(camera), content_type="multipart/x-mixed-replace;boundary=frame")
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        camera.stop()  # Ensure the camera thread is properly stopped
+
