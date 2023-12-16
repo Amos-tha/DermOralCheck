@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.http import HttpResponse
+from django.http import StreamingHttpResponse, JsonResponse
 from datetime import datetime
 from django.db import connection
 from django.contrib import messages
@@ -10,7 +10,10 @@ import tensorflow as tf
 import numpy as np
 from io import BytesIO
 import pandas as pd
+import cv2
+import threading
 import boto3
+from django.views.decorators import gzip
 
 custombucket = 'fyp-website'
 # Load the trained model (this should be done only once when the server starts)
@@ -19,7 +22,6 @@ oralModel : tf.keras.Sequential = tf.keras.models.load_model('88%.keras')
 labels = ['Actinic Keratosis', 'Atopic Dermatitis', 'Basal Cell Carcinoma', 'Dermatofibroma', 'Eczema', 'Melanocytic Nevi', 'Melanoma', 'Pigmented Benign Keratosis', 'Seborrheic Keratosis', 'Squamous Cell Carcinoma', 'Vascular Lesion']
 oralLabels = ['Calculus','Dental Caries','Gingivitis','Hypodontia','Mouth Ulcer','Oral Cancer','Tooth Discoloration']
 
-# Create your views here.
 def login(request):
     if request.method == 'POST':
             user = Account.objects.filter(phoneNo=request.POST.get('phone'),
@@ -65,7 +67,7 @@ def detect(request):
         top_N_probabilities = predictions[0][top_N_indices]
 
         # Map class indices to label names
-        # top_N_labels = [labels[index] for index in top_N_indices]
+        top_N_labels = [oralLabels[index] for index in top_N_indices]
 
         # get the login user
         user = Account.objects.get(phoneNo=request.session['phone'])
@@ -83,10 +85,10 @@ def detect(request):
         diagnosis_result = []
         medicine_list = []
 
-        for index, probability in zip(top_N_indices, top_N_probabilities):
+        for label, probability in zip(top_N_labels, top_N_probabilities):
             probability_formatted = round(float(probability), 4)
             if(probability_formatted > 0):
-                disease = Disease.objects.filter(pk=index).first()
+                disease = Disease.objects.filter(name=label).first()
                 dict_disease = model_to_dict(disease)
 
                 # print(dict_disease)
@@ -105,7 +107,7 @@ def detect(request):
                         medicine_list.append(Medicine.objects.filter(pk=mid).values().first())
                         print(mid)
                 else:
-                    medicine_list = "Do not have any recommendation yet..."
+                    medicine_list = []
 
                 diagnosis_result.append({'disease' : dict_disease, 'probability' : record.probability, 'medicines' : medicine_list})
                 
@@ -219,3 +221,64 @@ def diagnosisoral(request):
     img = request.session['disease_img']
     return render(request, "diagnosisOral.html", {"results" : results, "img" : img})
     # return render(request, "diagnosisOral.html", {"results" : results, "img" : img})
+
+# read camera
+class VideoCamera(object):
+    def __init__(self) :
+        self.video = cv2.VideoCapture(0)
+        (self.grabbed, self.frame) = self.video.read()
+        threading.Thread(target=self.update, args=()).start()
+
+    def __del__(self):
+        self.video.release()
+
+    def get_frame(self):
+        image = self.frame
+        _, jpeg = cv2.imencode('.jpg', image)
+        return jpeg.tobytes()
+
+    def update(self):
+        while True:
+            (self.grabbed, self.frame) = self.video.read()
+
+    def capture_and_save_frame(self, save_path):
+        # Capture the current frame
+        _, current_frame = self.video.read()
+
+        # Save the frame as a JPEG image
+        cv2.imwrite(save_path, current_frame)
+
+def cam(camera):
+    while True:
+        frame = camera.get_frame()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\n' + frame + b'\r\n\r\n')
+        
+def capture_and_save_frame(request):
+    global last_captured_frame
+    user = Account.objects.get(phoneNo=request.session['phone'])
+    img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+
+    try:
+        # Specify the path where you want to save the frame
+        save_path = 'static/media/' + img_name
+
+        # Capture and save the frame
+        camera = VideoCamera()
+        camera.capture_and_save_frame(save_path)
+
+        # Set the last captured frame for display or further processing
+        # last_captured_frame = cv2.imread(save_path)
+
+        return JsonResponse({'status': 'Frame captured and saved successfully'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)})
+
+@gzip.gzip_page
+def live_cam(request):
+    try:
+        camera = VideoCamera()
+        return StreamingHttpResponse(cam(camera), content_type="multipart/x-mixed-replace;boundary=frame")
+    except Exception as e:
+        print(f"Error: {e}")
+

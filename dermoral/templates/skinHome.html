@@ -48,19 +48,51 @@
     </div>
     <div class="row" style="display: flex; justify-content: center;">
         <div class="row btn-group btn-group-sm" role="group" style="display: flex; justify-content: center;">
-            <form action="{% url 'oralhome' %}" method="get" style=" width: 40%; display: flex; justify-content: center; padding: 0;">
+            <!-- btn to trigger the camera modal -->
+            <button type="button" style="width: 40%; margin: 5px 5px 5px 5px; background-color: white;"
+                data-bs-toggle="modal" data-bs-target="#cameraModal">
+                <img src="/static/media/camera.png" alt="capture image" style="width: 50%;">
+                <span style="display: block; margin-top: 5px; font-size: large;"><strong>CAPTURE IMAGE</strong></span>
+            </button>
+            <!-- <form action="{% url 'livecamera' %}" method="get" style=" width: 40%; display: flex; justify-content: center; padding: 0;">
                 <button type="submit" style="margin: 5px 5px 5px 5px; background-color: white;">
                     <img src="/static/media/camera.png" alt="capture image" style="width: 50%;">
                     <span style="display: block; margin-top: 5px; font-size: large;"><strong>CAPTURE IMAGE</strong></span>
                 </button>
-            </form>
-            <form action="{% url 'oralhome' %}" method="get" style=" width: 40%; display: flex; justify-content: center; padding: 0;">
+            </form> -->
+            <form action="{% url 'oralhome' %}" method="get"
+                style=" width: 40%; display: flex; justify-content: center; padding: 0;">
                 <button type="submit" style="margin: 5px 5px 5px 5px; background-color: white;">
                     <img src="/static/media/picture.png" alt="upload image" style="width: 50%;">
-                    <span style="display: block; margin-top: 5px; font-size: large;"><strong>UPLOAD IMAGE</strong></span>
+                    <span style="display: block; margin-top: 5px; font-size: large;"><strong>UPLOAD
+                            IMAGE</strong></span>
                 </button>
             </form>
         </div>
     </div>
 </div>
+
+<!-- Camera Modal -->
+<div class="modal fade" id="cameraModal" tabindex="-1" aria-labelledby="cameraModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cameraModalLabel">Live Camera Feed</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- iframe or other element to display the live camera feed -->
+                <img src="{% url 'livecamera' %}" style="width: 100%; height: 400px; border: none;">
+                <p>testing</p>
+            </div>
+            <div class="modal-footer">
+                <form action="{% url 'capture_and_save_frame' %}" method="get"
+                    style=" width: 40%; display: flex; justify-content: center; padding: 0;">
+                    <button type="submit" class="btn btn-secondary">Capture</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
