@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Login</title>
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="/static/bootstrapcss.css">
+    <link rel="stylesheet" href="/static/custom.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-10"><img src="/static/media/fyplogo.png" width="25%"></div>
+            <div class="col-6" style="display: flex; justify-content: center;"><img src="/static/media/login.png"
+                    width="90%" height="90%"></div>
+            <div class="col-4 ms-3 me-3 pt-5 mt-5">
+                {% if messages %}
+                <div class="messages alert alert-danger alert-dismissible fade show">
+                    {% for message in messages %}
+                    <strong>Error!</strong> {{ message }}
+                    {% endfor %}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
+                <h2 style="color: #2F3367" class="fw-bold mb-4">Login</h2>
+                <form action="" method="post">
+                    {% csrf_token %}
+                    <input class="form-control mb-3" type="text" placeholder="Phone Number" name="phone">
+                    <input class="form-control mb-3" type="password" placeholder="Password" name="psw">
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </div>
+                </form>
+                <div class="d-flex flex-row justify-content-between">
+                    <p style="color: #4C4F7C;font-size: small;">Don't have an account?</p>
+                    <a href="{% url 'signup' %}" class="fw-bold text-decoration-none"
+                        style="color: #007DFA;font-size: small;">Sign up a new
+                        account</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/bootstrap.bundle.js"></script>
+    <script src="/static/popper.js"></script>
+</body>
+
+</html>
