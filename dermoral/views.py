@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.http import StreamingHttpResponse
+from django.http import StreamingHttpResponse, JsonResponse
 from datetime import datetime
 from django.db import connection
 from django.contrib import messages
@@ -244,15 +244,38 @@ class VideoCamera(object):
         while True:
             (self.grabbed, self.frame) = self.video.read()
 
-    def stop(self):
-        self.is_running = False
-        self.thread.join()
+    def capture_and_save_frame(self, save_path):
+        # Capture the current frame
+        _, current_frame = self.video.read()
+
+        # Save the frame as a JPEG image
+        cv2.imwrite(save_path, current_frame)
 
 def cam(camera):
     while True:
         frame = camera.get_frame()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\n' + frame + b'\r\n\r\n')
+        
+def capture_and_save_frame(request):
+    global last_captured_frame
+    user = Account.objects.get(phoneNo=request.session['phone'])
+    img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+
+    try:
+        # Specify the path where you want to save the frame
+        save_path = 'static/media/' + img_name
+
+        # Capture and save the frame
+        camera = VideoCamera()
+        camera.capture_and_save_frame(save_path)
+
+        # Set the last captured frame for display or further processing
+        # last_captured_frame = cv2.imread(save_path)
+
+        return JsonResponse({'status': 'Frame captured and saved successfully'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)})
 
 @gzip.gzip_page
 def live_cam(request):
@@ -261,6 +284,4 @@ def live_cam(request):
         return StreamingHttpResponse(cam(camera), content_type="multipart/x-mixed-replace;boundary=frame")
     except Exception as e:
         print(f"Error: {e}")
-    finally:
-        camera.stop()  # Ensure the camera thread is properly stopped
 
