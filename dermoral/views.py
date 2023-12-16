@@ -22,17 +22,13 @@ oralLabels = ['Calculus','Dental Caries','Gingivitis','Hypodontia','Mouth Ulcer'
 # Create your views here.
 def login(request):
     if request.method == 'POST':
-        try:
             user = Account.objects.filter(phoneNo=request.POST.get('phone'),
                                     password=request.POST.get('psw')).first()
-            
             if user:
                 request.session['phone'] = user.phoneNo
-                return redirect("detectoral")
-                
-        except Account.DoesNotExist:
-            messages.error(request, 'The phone number or password is wrong.')
-            
+                return redirect("home")
+            else:
+                messages.error(request, 'The phone number or password is wrong.')
 
     return render(request, "login.html", {})
 

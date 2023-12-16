@@ -80,10 +80,10 @@ DATABASES = {
         # 'ENGINE': 'django.db.backends.sqlite3',
         # 'NAME': BASE_DIR / 'db.sqlite3',
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'fyp',
+        'NAME': 'dermoral',
         'USER': 'admin',
-        'PASSWORD': 'abcd1234',
-        'HOST': 'fyp.cgsytlxmt2zj.us-east-1.rds.amazonaws.com',
+        'PASSWORD': 'dermoral2023',
+        'HOST': 'dermoral.cynqmysal4kc.us-east-1.rds.amazonaws.com',
         'POST': '3306',
     }
 }
