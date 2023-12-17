@@ -223,6 +223,7 @@ def diagnosisoral(request):
     # return render(request, "diagnosisOral.html", {"results" : results, "img" : img})
 
 # read camera
+global_camera = None
 class VideoCamera(object):
     def __init__(self) :
         self.video = cv2.VideoCapture(0)
@@ -230,7 +231,8 @@ class VideoCamera(object):
         threading.Thread(target=self.update, args=()).start()
 
     def __del__(self):
-        self.video.release()
+        # self.video.release()
+        pass
 
     def get_frame(self):
         image = self.frame
@@ -247,6 +249,9 @@ class VideoCamera(object):
 
         # Save the frame as a JPEG image
         cv2.imwrite(save_path, current_frame)
+
+    def release_camera(self):
+        self.video.release()
 
 def cam(camera):
     while True:
@@ -274,11 +279,16 @@ def capture_and_save_frame(request):
     except Exception as e:
         return JsonResponse({'error': str(e)})
 
+
 @gzip.gzip_page
 def live_cam(request):
     try:
-        camera = VideoCamera()
-        return StreamingHttpResponse(cam(camera), content_type="multipart/x-mixed-replace;boundary=frame")
+        global global_camera 
+        global_camera = VideoCamera()
+        return StreamingHttpResponse(cam(global_camera), content_type="multipart/x-mixed-replace;boundary=frame")
     except Exception as e:
         print(f"Error: {e}")
 
+def release_cam(request):
+    global global_camera
+    global_camera.release_camera()
