@@ -48,19 +48,50 @@
     </div>
     <div class="row" style="display: flex; justify-content: center;">
         <div class="row btn-group btn-group-sm" role="group" style="display: flex; justify-content: center;">
-            <form action="{% url 'oralhome' %}" method="get" style=" width: 40%; display: flex; justify-content: center; padding: 0;">
+            <form action="{% url 'oralhome' %}" method="get"
+                style=" width: 40%; display: flex; justify-content: center; padding: 0;">
                 <button type="submit" style="margin: 5px 5px 5px 5px; background-color: white;">
                     <img src="/static/media/camera.png" alt="capture image" style="width: 50%;">
-                    <span style="display: block; margin-top: 5px; font-size: large;"><strong>CAPTURE IMAGE</strong></span>
+                    <span style="display: block; margin-top: 5px; font-size: large;"><strong>CAPTURE
+                            IMAGE</strong></span>
                 </button>
             </form>
-            <form action="{% url 'oralhome' %}" method="get" style=" width: 40%; display: flex; justify-content: center; padding: 0;">
-                <button type="submit" style="margin: 5px 5px 5px 5px; background-color: white;">
-                    <img src="/static/media/picture.png" alt="upload image" style="width: 50%;">
-                    <span style="display: block; margin-top: 5px; font-size: large;"><strong>UPLOAD IMAGE</strong></span>
-                </button>
-            </form>
+            <button type="submit" style="width: 40%; margin: 5px 5px 5px 5px; background-color: white;"
+                data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <img src="/static/media/picture.png" alt="upload image" style="width: 50%;">
+                <span style="display: block; margin-top: 5px; font-size: large;"><strong>UPLOAD IMAGE</strong></span>
+            </button>
         </div>
     </div>
 </div>
+
+<!-- Camera Modal -->
+<form action="{% url 'detectoral' %}" method="post" enctype="multipart/form-data" style="display: flex; align-items: center; padding: 0;">
+    <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">Upload Photo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row" style="display: flex; justify-content: center;">
+                        <div class="fs-2 fw-bold text-center">Please select an oral disease image to
+                            upload</div>
+                        <div class="row" style="display: flex; align-items: center;">
+                            <div class="col mb-2 mt-5 pb-2 pt-5" style="display: flex; justify-content: center;">
+                                {% csrf_token %}
+                                <input class="form-control form-control-lg" type="file" accept="image/*" name="img">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-secondary">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
 {% endblock %}
