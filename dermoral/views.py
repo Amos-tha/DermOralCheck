@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
-from django.http import StreamingHttpResponse, JsonResponse
+from django.http import StreamingHttpResponse, HttpResponseRedirect
 from datetime import datetime
 from django.db import connection
 from django.contrib import messages
@@ -47,9 +47,12 @@ def signup(request):
     return render(request, "signup.html", {})
 
 def detect(request):
-    if request.method == 'POST':
-        # Load and preprocess the input image
-        uploaded_file = request.FILES['img'] 
+    if request.method == 'POST' or request.GET.get('method') == 'POST':
+        if 'img' in request.FILES:
+            # Load and preprocess the input image
+            uploaded_file = request.FILES['img'] 
+        else:
+            uploaded_file = request.session['save_path']
 
         # preprocess the uploaded image
         img = tf.keras.preprocessing.image.load_img(BytesIO(uploaded_file.read()), target_size=(128, 128))  # Adjust the target size
@@ -132,7 +135,23 @@ def home(request):
 def oralhome(request):
     return render(request, "oralHome.html")
 
+# read camera
+global_camera = None
+
 def skinhome(request):
+    global global_camera
+    if(request.GET.get("freeze")):
+        global_camera.freeze_frame()
+    elif(request.GET.get("unfreeze")):
+            global_camera.unfreeze_frame()
+    # elif(request.GET.get("save")):
+    #     user = Account.objects.get(phoneNo=request.session['phone'])
+    #     img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+    #     save_path = 'static/media/' + img_name
+    #     global_camera.capture_and_save_frame(save_path)
+    #     request.session["save_path"] = save_path
+    #     # return HttpResponseRedirect(reverse('detect'))
+    #     return render(request, "home.html")
     return render(request, "skinHome.html")
 
 def map(request):
@@ -223,62 +242,77 @@ def diagnosisoral(request):
     # return render(request, "diagnosisOral.html", {"results" : results, "img" : img})
 
 # read camera
+# global_camera = None
 class VideoCamera(object):
     def __init__(self) :
         self.video = cv2.VideoCapture(0)
         (self.grabbed, self.frame) = self.video.read()
+        self.frozen_frame = None
+        self.freeze_flag = threading.Event()
         threading.Thread(target=self.update, args=()).start()
 
     def __del__(self):
-        self.video.release()
+        # self.video.release()
+        pass
 
     def get_frame(self):
-        image = self.frame
-        _, jpeg = cv2.imencode('.jpg', image)
-        return jpeg.tobytes()
+        if self.frozen_frame is not None:
+            _, jpeg = cv2.imencode('.jpg', self.frozen_frame)
+            return jpeg.tobytes()
+        else:
+            image = self.frame
+            _, jpeg = cv2.imencode('.jpg', image)
+            return jpeg.tobytes()
 
     def update(self):
         while True:
-            (self.grabbed, self.frame) = self.video.read()
+            if not self.freeze_flag.is_set():
+                (self.grabbed, self.frame) = self.video.read()
+
+    def freeze_frame(self):
+        if not self.freeze_flag.is_set():
+            self.frozen_frame = self.frame
+            self.freeze_flag.set()
+
+    def unfreeze_frame(self):
+        if self.freeze_flag.is_set():
+            self.frozen_frame = None
+            self.freeze_flag.clear()
 
     def capture_and_save_frame(self, save_path):
-        # Capture the current frame
-        _, current_frame = self.video.read()
+        if self.frozen_frame is not None:
+            cv2.imwrite(save_path, self.frozen_frame)
+            self.frozen_frame = None
+            self.freeze_flag.clear()
 
-        # Save the frame as a JPEG image
-        cv2.imwrite(save_path, current_frame)
+    def release_camera(self):
+        self.video.release()
 
 def cam(camera):
     while True:
         frame = camera.get_frame()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\n' + frame + b'\r\n\r\n')
-        
-def capture_and_save_frame(request):
-    global last_captured_frame
-    user = Account.objects.get(phoneNo=request.session['phone'])
-    img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
-
-    try:
-        # Specify the path where you want to save the frame
-        save_path = 'static/media/' + img_name
-
-        # Capture and save the frame
-        camera = VideoCamera()
-        camera.capture_and_save_frame(save_path)
-
-        # Set the last captured frame for display or further processing
-        # last_captured_frame = cv2.imread(save_path)
-
-        return JsonResponse({'status': 'Frame captured and saved successfully'})
-    except Exception as e:
-        return JsonResponse({'error': str(e)})
 
 @gzip.gzip_page
 def live_cam(request):
     try:
-        camera = VideoCamera()
-        return StreamingHttpResponse(cam(camera), content_type="multipart/x-mixed-replace;boundary=frame")
+        global global_camera 
+        global_camera = VideoCamera()
+        return StreamingHttpResponse(cam(global_camera), content_type="multipart/x-mixed-replace;boundary=frame")
     except Exception as e:
         print(f"Error: {e}")
+
+def release_cam(request):
+    global global_camera
+    global_camera.release_camera()
+    return None
+
+def save_frame(request):
+    user = Account.objects.get(phoneNo=request.session['phone'])
+    img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+    save_path = 'static/media/' + img_name
+    global_camera.capture_and_save_frame(save_path)
+    request.session["save_path"] = save_path
+    return HttpResponseRedirect(reverse('detect') + '?method=POST')
 
