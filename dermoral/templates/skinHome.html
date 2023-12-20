@@ -92,10 +92,15 @@
                 <p>testing</p>
             </div>
             <div class="modal-footer">
-                <form action="{% url 'capture_and_save_frame' %}" method="get"
-                    style=" width: 40%; display: flex; justify-content: center; padding: 0;">
-                    <button type="submit" class="btn btn-secondary">Capture</button>
+                <button type="button" class="btn btn-secondary" id="captureBtn"
+                    style="width: 40%; display: flex; justify-content: center; padding: 0;"
+                    onclick="freezeFrame()">Capture</button>
+                <form method="post" id="saveFrameForm">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary" id="yesBtn" style="visibility: hidden;">Yes</button>
                 </form>
+                <button type="button" class="btn btn-secondary" id="noBtn" style="visibility: hidden;"
+                    onclick="unfreezeFrame()">No</button>
             </div>
         </div>
     </div>
@@ -133,6 +138,10 @@
 
 <!-- Add an event listener to update the image source when the modal is shown -->
 <script>
+    var captureBtn = document.getElementById('captureBtn');
+    var yesBtn = document.getElementById('yesBtn');
+    var noBtn = document.getElementById('noBtn');
+
     document.addEventListener('DOMContentLoaded', function () {
         var liveCameraImage = document.getElementById('liveCameraImage');
         var cameraModalElement = document.getElementById('cameraModal');
@@ -153,6 +162,58 @@
             console.log('closing cam')
         });
 
+        var form = document.getElementById('saveFrameForm');
+        // Add a click event listener to the button
+        yesBtn.addEventListener('click', function () {
+            // Set the form action to the desired URL
+            form.action = '{% url "saveframe" %}';
+            // Manually submit the form
+            form.submit();
+
+        });
+
     });
+
+    function unfreezeFrame() {
+        // If hidden, show the button
+        captureBtn.style.visibility = 'visible';
+        yesBtn.style.visibility = 'hidden';
+        noBtn.style.visibility = 'hidden';
+
+        var url = `{% url 'skinhome' %}?unfreeze=test`;
+        fetch(url, {
+            method: "GET",
+        }).then(data => {
+            console.log("unfreeze")
+        })
+    }
+
+    function freezeFrame() {
+        // If hidden, show the button
+        captureBtn.style.visibility = 'hidden';
+        yesBtn.style.visibility = 'visible';
+        noBtn.style.visibility = 'visible';
+
+        var url = `{% url 'skinhome' %}?freeze=freeze`;
+
+        fetch(url, {
+            method: "GET",
+        }).then(data => {
+            console.log("freeze")
+        })
+    }
+
+    // function saveFrame() {
+    //     captureBtn.style.visibility = 'visible';
+    //     yesBtn.style.visibility = 'hidden';
+    //     noBtn.style.visibility = 'hidden';
+
+    //     var url = `{% url 'skinhome' %}?save=yes`;
+    //     fetch(url, {
+    //         method: "GET",
+    //     }).then(data => {
+    //         console.log("save")
+    //     })
+    // }
 </script>
 {% endblock %}
