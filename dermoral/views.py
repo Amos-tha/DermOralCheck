@@ -67,7 +67,7 @@ def detect(request):
         top_N_probabilities = predictions[0][top_N_indices]
 
         # Map class indices to label names
-        top_N_labels = [oralLabels[index] for index in top_N_indices]
+        top_N_labels = [labels[index] for index in top_N_indices]
 
         # get the login user
         user = Account.objects.get(phoneNo=request.session['phone'])
