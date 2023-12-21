@@ -48,14 +48,29 @@ def signup(request):
 
 def detect(request):
     if request.method == 'POST' or request.GET.get('method') == 'POST':
+        user = Account.objects.get(phoneNo=request.session['phone'])
         if 'img' in request.FILES:
             # Load and preprocess the input image
             uploaded_file = request.FILES['img'] 
+            img = tf.keras.preprocessing.image.load_img(BytesIO(uploaded_file.read()), target_size=(128, 128))  # Adjust the target size
+            # get the login user
+
+            img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
+
+            # # Uplaod image file in S3 #
+            # s3 = boto3.resource("s3")
+            # s3.Bucket(custombucket).put_object(Key=img_name, Body=uploaded_file)
+            uploaded_file.name = img_name
+            disease_img = Image.objects.create(path=uploaded_file)
+            
         else:
             uploaded_file = request.session['save_path']
+            saved_img = cv2.imread(uploaded_file)
+            img = cv2.resize(saved_img, (128,128))
+            disease_img = Image.objects.create(path=uploaded_file)
+
 
         # preprocess the uploaded image
-        img = tf.keras.preprocessing.image.load_img(BytesIO(uploaded_file.read()), target_size=(128, 128))  # Adjust the target size
         img = tf.keras.preprocessing.image.img_to_array(img)
         img = np.expand_dims(img, axis=0)
         img = img / 255.0  # Normalize pixel values (if not already normalized during training)
@@ -71,18 +86,6 @@ def detect(request):
 
         # Map class indices to label names
         top_N_labels = [labels[index] for index in top_N_indices]
-
-        # get the login user
-        user = Account.objects.get(phoneNo=request.session['phone'])
-
-        img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
-
-        # # Uplaod image file in S3 #
-        # s3 = boto3.resource("s3")
-        # s3.Bucket(custombucket).put_object(Key=img_name, Body=uploaded_file)
-
-        uploaded_file.name = img_name
-        disease_img = Image.objects.create(path=uploaded_file)
 
         # Create a list of predictions and their probabilities
         diagnosis_result = []
@@ -144,14 +147,9 @@ def skinhome(request):
         global_camera.freeze_frame()
     elif(request.GET.get("unfreeze")):
             global_camera.unfreeze_frame()
-    # elif(request.GET.get("save")):
-    #     user = Account.objects.get(phoneNo=request.session['phone'])
-    #     img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
-    #     save_path = 'static/media/' + img_name
-    #     global_camera.capture_and_save_frame(save_path)
-    #     request.session["save_path"] = save_path
-    #     # return HttpResponseRedirect(reverse('detect'))
-    #     return render(request, "home.html")
+    elif(request.GET.get("release")):
+        global_camera.release_camera()
+        
     return render(request, "skinHome.html")
 
 def map(request):
@@ -243,18 +241,27 @@ def diagnosisoral(request):
 
 # read camera
 # global_camera = None
+run_camera = False
 class VideoCamera(object):
     def __init__(self) :
-        self.video = cv2.VideoCapture(0)
-        (self.grabbed, self.frame) = self.video.read()
+        self.video = None
+        self.frame = None
+        self.grabbed = False
         self.frozen_frame = None
         self.freeze_flag = threading.Event()
+        self.initialize_video_capture()
+
+    def initialize_video_capture(self):
+        global run_camera
+        run_camera = True
+        self.video = cv2.VideoCapture(0)
+        _, self.frame = self.video.read()
         threading.Thread(target=self.update, args=()).start()
 
     def __del__(self):
         # self.video.release()
         pass
-
+ 
     def get_frame(self):
         if self.frozen_frame is not None:
             _, jpeg = cv2.imencode('.jpg', self.frozen_frame)
@@ -286,10 +293,16 @@ class VideoCamera(object):
             self.freeze_flag.clear()
 
     def release_camera(self):
+        global run_camera
+        run_camera = False
+        self.frozen_frame = None
+        self.frame = None
+        self.freeze_flag.clear()
         self.video.release()
 
 def cam(camera):
-    while True:
+    global run_camera
+    while run_camera:
         frame = camera.get_frame()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\n' + frame + b'\r\n\r\n')
@@ -302,11 +315,6 @@ def live_cam(request):
         return StreamingHttpResponse(cam(global_camera), content_type="multipart/x-mixed-replace;boundary=frame")
     except Exception as e:
         print(f"Error: {e}")
-
-def release_cam(request):
-    global global_camera
-    global_camera.release_camera()
-    return None
 
 def save_frame(request):
     user = Account.objects.get(phoneNo=request.session['phone'])

@@ -83,7 +83,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="cameraModalLabel">Live Camera Feed</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="releaseCam()"></button>
             </div>
             <div class="modal-body">
                 <!-- iframe or other element to display the live camera feed -->
@@ -151,15 +151,10 @@
         console.log('abco')
 
         cameraModalElement.addEventListener('shown.bs.modal', function () {
+            var timestamp = new Date().getTime();
             // Update the src attribute with the desired URL (replace 'livecamera' with your actual URL)
-            liveCameraImage.src = '{% url "livecamera" %}';
+            liveCameraImage.src = '{% url "livecamera" %}?timestamp=' + timestamp;
             console.log('test')
-        });
-
-        cameraModalElement.addEventListener('hidden.bs.modal', function () {
-            // Close the webcam when the modal is closed
-            liveCameraImage.src = '{% url "releasecamera" %}';
-            console.log('closing cam')
         });
 
         var form = document.getElementById('saveFrameForm');
@@ -180,7 +175,7 @@
         yesBtn.style.visibility = 'hidden';
         noBtn.style.visibility = 'hidden';
 
-        var url = `{% url 'skinhome' %}?unfreeze=test`;
+        var url = `{% url 'skinhome' %}?unfreeze=unfreeze`;
         fetch(url, {
             method: "GET",
         }).then(data => {
@@ -203,17 +198,18 @@
         })
     }
 
-    // function saveFrame() {
-    //     captureBtn.style.visibility = 'visible';
-    //     yesBtn.style.visibility = 'hidden';
-    //     noBtn.style.visibility = 'hidden';
+    function releaseCam(){
+        captureBtn.style.visibility = 'visible';
+        yesBtn.style.visibility = 'hidden';
+        noBtn.style.visibility = 'hidden';
 
-    //     var url = `{% url 'skinhome' %}?save=yes`;
-    //     fetch(url, {
-    //         method: "GET",
-    //     }).then(data => {
-    //         console.log("save")
-    //     })
-    // }
+        var url = `{% url 'skinhome' %}?release=release`;
+
+        fetch(url, {
+            method: "GET",
+        }).then(data => {
+            console.log("release")
+        })
+    }
 </script>
 {% endblock %}
