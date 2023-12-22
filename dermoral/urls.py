@@ -14,6 +14,5 @@ urlpatterns = [
     path('detectoral', views.detectoral, name='detectoral'),
     path('diagnosisoral', views.diagnosisoral, name="diagnosisoral"),
     path('camera', views.live_cam, name='livecamera'),
-    path('release_cam', views.release_cam, name='releasecamera'),
     path('save_frame', views.save_frame, name='saveframe'),
 ]
