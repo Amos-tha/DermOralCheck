@@ -287,10 +287,12 @@ class VideoCamera(object):
             self.freeze_flag.clear()
 
     def capture_and_save_frame(self, save_path):
-        if self.frozen_frame is not None:
-            cv2.imwrite(save_path, self.frozen_frame)
-            self.frozen_frame = None
-            self.freeze_flag.clear()
+        global run_camera
+        run_camera = False
+        cv2.imwrite(save_path, self.frozen_frame)
+        self.frozen_frame = None
+        self.freeze_flag.clear()
+        self.release_camera()
 
     def release_camera(self):
         global run_camera
