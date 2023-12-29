@@ -15,11 +15,10 @@ import threading
 import boto3
 from django.views.decorators import gzip
 
-custombucket = 'fyp-website'
 # Load the trained model (this should be done only once when the server starts)
-model : tf.keras.Sequential = tf.keras.models.load_model('sure_model.h5')
+model : tf.keras.Sequential = tf.keras.models.load_model('skin_model2.h5')
 oralModel : tf.keras.Sequential = tf.keras.models.load_model('88%.keras')
-labels = ['Actinic Keratosis', 'Atopic Dermatitis', 'Basal Cell Carcinoma', 'Dermatofibroma', 'Eczema', 'Melanocytic Nevi', 'Melanoma', 'Pigmented Benign Keratosis', 'Seborrheic Keratosis', 'Squamous Cell Carcinoma', 'Vascular Lesion']
+labels = ['Atopic Dermatitis', 'Basal Cell Carcinoma', 'Dermatofibroma', 'Eczema', 'Melanocytic Nevi', 'Melanoma', 'Psoriasis', 'Seborrheic Keratosis', 'Squamous Cell Carcinoma', 'Tinea', 'Vascular Lesion']
 oralLabels = ['Calculus','Dental Caries','Gingivitis','Hypodontia','Mouth Ulcer','Oral Cancer','Tooth Discoloration']
 
 def login(request):
@@ -40,6 +39,7 @@ def signup(request):
             acc = Account.objects.create(name=request.POST.get('name'), 
                                     phoneNo=request.POST.get('phone'),
                                     email=request.POST.get('email'),
+                                    address=request.POST.get('address'),
                                     password=request.POST.get('psw'))
             return redirect("login")
         else:
@@ -317,10 +317,12 @@ def live_cam(request):
         print(f"Error: {e}")
 
 def save_frame(request):
+    global global_camera 
     user = Account.objects.get(phoneNo=request.session['phone'])
     img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
     save_path = 'static/media/' + img_name
     global_camera.capture_and_save_frame(save_path)
     request.session["save_path"] = save_path
+    global_camera.release_camera()
     return HttpResponseRedirect(reverse('detect') + '?method=POST')
 

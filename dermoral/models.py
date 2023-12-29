@@ -7,7 +7,6 @@ class Account(models.Model):
     email = models.EmailField(max_length=255)
     address = models.CharField(max_length=250, blank=True)
     password = models.CharField(max_length=250)
-    healthCondition = models.CharField(max_length=250, blank=True)
 
 class Disease(models.Model):
     # default auto increment if no put this line of code
