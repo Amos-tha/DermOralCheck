@@ -4,11 +4,30 @@
 
 {% block head%}
 <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+<!-- <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet"> -->
 <link rel="stylesheet"
     href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css" type="text/css">
 <style>
     #map {
         width: 100%;
+    }
+
+    .dental {
+        background-image: url('static/media/dental.png');
+        background-size: cover;
+        width: 30px;
+        height: 30px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .derma {
+        background-image: url('static/media/derma.png');
+        background-size: cover;
+        width: 30px;
+        height: 30px;
+        border-radius: 5px;
+        cursor: pointer;
     }
 </style>
 {% endblock %}
@@ -19,15 +38,31 @@
 <div id="map"></div>
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.js"></script>
+<link rel="stylesheet"
+    href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.css"
+    type="text/css">
 <script>
     mapboxgl.accessToken = 'pk.eyJ1IjoiaGVsbG9zcyIsImEiOiJjbGwzdjJ2bGowMDdhM2RtcTk4bWpka2w3In0.Tlw0fp3fGfNrgzYQKlWDqw';
     const map = new mapboxgl.Map({
         container: 'map',
         // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: [101.6942, 3.1390],
+        // center: [101.6942, 3.1390],
         zoom: 13
     });
+
+    const defaultAddress = '{{address}}';
+    // console.log(defaultAddress)
+    // Use Mapbox Geocoding API to fetch coordinates based on default address
+    fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${defaultAddress}.json?limit=2&access_token=${mapboxgl.accessToken}`)
+        .then(response => response.json())
+        .then(data => {
+            const coordinates = data.features[0].center; // Get the first result's coordinates
+            // console.log(coordinates)
+            map.setCenter(coordinates);
+        })
+        .catch(error => console.error(error));
 
     // Add the control to the map.
     map.addControl(
@@ -52,11 +87,48 @@
         'bottom-right'
     );
 
-    map.addControl(
-        new MapboxDirections({
-            accessToken: mapboxgl.accessToken
-        }),
-        'top-left'
-    );
+    // map.addControl(
+    //     new MapboxDirections({
+    //         accessToken: mapboxgl.accessToken
+    //     }),
+    //     'top-left'
+    // );
+
+    const dermatologyClinics = [
+        { name: 'Dermalene Skin Centre - Kota Damansara', coordinates: [101.595620, 3.154990] },
+        { name: 'Gan Ain Tian', coordinates: [101.712380, 3.159050] },
+        { name: 'H-II Clinic Melawati (H2 Clinic)', coordinates: [101.757420, 3.205010] },
+    ];
+
+    const dentistClinics = [
+        { name: 'Klinik Pergigian Prosmile Dental (Melawati) Invisalign & Zenyum Provider', coordinates: [101.710920, 3.236500] },
+        { name: 'Klinik Pergigian Fauziah', coordinates: [101.710920, 3.236500] },
+        { name: 'Klinik Pergigian myDental@Melati', coordinates: [101.73104, 3.2231076] },
+    ];
+
+    // Function to add a marker for a clinic
+    function addDental(clinic) {
+        const dentalM = document.createElement('div');
+        dentalM.className = 'dental';
+        new mapboxgl.Marker(dentalM)
+            .setLngLat(clinic.coordinates)
+            .setPopup(new mapboxgl.Popup().setHTML(`<h6>${clinic.name}</h6>`))
+            .addTo(map);
+    }
+
+    function addDerma(clinic) {
+        const dermaM = document.createElement('div');
+        dermaM.className = 'derma';
+        new mapboxgl.Marker(dermaM)
+            .setLngLat(clinic.coordinates)
+            .setPopup(new mapboxgl.Popup().setHTML(`<h6>${clinic.name}</h6>`))
+            .addTo(map);
+    }
+
+    // Add markers for dermatology clinics
+    dermatologyClinics.forEach(addDerma);
+
+    // Add markers for dentist clinics
+    dentistClinics.forEach(addDental);
 </script>
 {% endblock %}
