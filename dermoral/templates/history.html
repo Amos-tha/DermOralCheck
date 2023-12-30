@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %} History {% endblock %}
+
+{% block content %}
+{% if history %}
+{% for hist in history %}
+<p>{{ hist.probability }}</p>
+{% endfor %}
+{% else %}
+<strong>Do not have any history yet...</strong>
+{% endif %}
+{% endblock %}

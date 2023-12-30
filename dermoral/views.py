@@ -138,9 +138,6 @@ def home(request):
 def oralhome(request):
     return render(request, "oralHome.html")
 
-# read camera
-global_camera = None
-
 def skinhome(request):
     global global_camera
     if(request.GET.get("freeze")):
@@ -153,7 +150,8 @@ def skinhome(request):
     return render(request, "skinHome.html")
 
 def map(request):
-    return render(request, "map.html")
+    user = Account.objects.filter(phoneNo=request.session['phone']).first()
+    return render(request, "map.html", {"address": user.address})
 
 def profile(request):
     return render(request, "profile.html")
@@ -239,8 +237,14 @@ def diagnosisoral(request):
     return render(request, "diagnosisOral.html", {"results" : results, "img" : img})
     # return render(request, "diagnosisOral.html", {"results" : results, "img" : img})
 
+def history(request):
+    user = Account.objects.get(phoneNo=request.session['phone'])
+    history = Record.objects.filter(patient=user).values()
+    return render(request, "history.html", {"history" : history})
+
+
 # read camera
-# global_camera = None
+global_camera = None
 run_camera = False
 class VideoCamera(object):
     def __init__(self) :
