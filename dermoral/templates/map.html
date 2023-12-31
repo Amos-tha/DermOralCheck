@@ -87,12 +87,12 @@
         'bottom-right'
     );
 
-    // map.addControl(
-    //     new MapboxDirections({
-    //         accessToken: mapboxgl.accessToken
-    //     }),
-    //     'top-left'
-    // );
+    map.addControl(
+        new MapboxDirections({
+            accessToken: mapboxgl.accessToken
+        }),
+        'top-left'
+    );
 
     const dermatologyClinics = [
         { name: 'Dermalene Skin Centre - Kota Damansara', coordinates: [101.595620, 3.154990] },
