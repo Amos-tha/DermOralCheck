@@ -16,4 +16,5 @@ urlpatterns = [
     path('diagnosisoral', views.diagnosisoral, name="diagnosisoral"),
     path('camera', views.live_cam, name='livecamera'),
     path('save_frame', views.save_frame, name='saveframe'),
+    path('oral_save_frame', views.oral_save_frame, name='oralsaveframe')
 ]

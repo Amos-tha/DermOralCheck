@@ -157,12 +157,29 @@ def profile(request):
     return render(request, "profile.html")
 
 def detectoral(request):
-    if request.method == 'POST':
-        # Load and preprocess the input image
-        uploaded_file = request.FILES['img'] 
+    if request.method == 'POST' or request.GET.get('method') == 'POST':
+        user = Account.objects.get(phoneNo=request.session['phone'])
+        if 'img' in request.FILES:
+            # Load and preprocess the input image
+            uploaded_file = request.FILES['img'] 
+            img = tf.keras.preprocessing.image.load_img(BytesIO(uploaded_file.read()), target_size=(96, 96))  # Adjust the target size
+            # get the login user
+
+            img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
+
+            # # Uplaod image file in S3 #
+            # s3 = boto3.resource("s3")
+            # s3.Bucket(custombucket).put_object(Key=img_name, Body=uploaded_file)
+            uploaded_file.name = img_name
+            disease_img = Image.objects.create(path=uploaded_file)
+            
+        else:
+            uploaded_file = request.session['save_path']
+            saved_img = cv2.imread(uploaded_file)
+            img = cv2.resize(saved_img, (96,96))
+            disease_img = Image.objects.create(path=uploaded_file)
 
         # preprocess the uploaded image
-        img = tf.keras.preprocessing.image.load_img(BytesIO(uploaded_file.read()), target_size=(96, 96))  # Adjust the target size
         img = tf.keras.preprocessing.image.img_to_array(img)
         img = np.array(img).reshape(-1, 96, 96, 3)
         img = img / 255.0  # Normalize pixel values (if not already normalized during training)
@@ -178,18 +195,6 @@ def detectoral(request):
 
         # Map class indices to label names
         top_N_labels = [oralLabels[index] for index in top_N_indices]
-
-        # get the login user
-        user = Account.objects.get(phoneNo=request.session['phone'])
-
-        img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
-
-        # # Uplaod image file in S3 #
-        # s3 = boto3.resource("s3")
-        # s3.Bucket(custombucket).put_object(Key=img_name, Body=uploaded_file)
-
-        uploaded_file.name = img_name
-        disease_img = Image.objects.create(path=uploaded_file)
 
         # Create a list of predictions and their probabilities
         diagnosis_result = []
@@ -331,4 +336,14 @@ def save_frame(request):
     request.session["save_path"] = save_path
     global_camera.release_camera()
     return HttpResponseRedirect(reverse('detect') + '?method=POST')
+
+def oral_save_frame(request):
+    global global_camera 
+    user = Account.objects.get(phoneNo=request.session['phone'])
+    img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+    save_path = 'static/media/' + img_name
+    global_camera.capture_and_save_frame(save_path)
+    request.session["save_path"] = save_path
+    global_camera.release_camera()
+    return HttpResponseRedirect(reverse('detectoral') + '?method=POST')
 
