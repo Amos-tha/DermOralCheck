@@ -12,12 +12,13 @@ class Command(BaseCommand):
         # Prescription.objects.all().delete()
         Record.objects.all().delete()
 
-        disease_path = 'C:/Users/amost/Desktop/Disease.xlsx'  # Replace with the actual file path
-        # treatment_path = 'C:/Users/ASUS/Desktop/Treatment.xlsx'  # Replace with the actual file path
+        # disease_path = 'C:/Users/amost/Desktop/Disease.xlsx'  # Replace with the actual file path
+        disease_path = 'C:/Users/ASUS/Desktop/Disease.xlsx'  # Replace with the actual file path
+        treatment_path = 'C:/Users/ASUS/Desktop/Treatment.xlsx'  # Replace with the actual file path
 
         # Read Excel file into a DataFrame
         df = pd.read_excel(disease_path)
-        # tf = pd.read_excel(treatment_path)
+        tf = pd.read_excel(treatment_path)
 
         # Iterate through rows and create model instances
         for index, row in df.iterrows():
@@ -30,14 +31,14 @@ class Command(BaseCommand):
             )
             dInstance.save()
 
-        # for index, row in tf.iterrows():
-        #     tInstance = Medicine(
-        #         name=row['Name'],  # Replace with your column names
-        #         description=row['Description'],
-        #         sideEffect=row['SideEffect'],
-        #         # Add other fields as needed
-        #     )
-        #     tInstance.save()
+        for index, row in tf.iterrows():
+            tInstance = Medicine(
+                name=row['Name'],  # Replace with your column names
+                description=row['Description'],
+                sideEffect=row['SideEffect'],
+                # Add other fields as needed
+            )
+            tInstance.save()
 
 
         self.stdout.write(self.style.SUCCESS('Data imported successfully.'))

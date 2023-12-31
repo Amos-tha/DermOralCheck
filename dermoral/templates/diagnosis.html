@@ -13,9 +13,9 @@
     </div>
     {% endif %}
 </div>
-<div class="col-6 border border-3">
+<div class="col-4 border border-3">
     {% if results %}
-    <div class="accordion" id="diagnosisResults">
+    <div class="accordion" id="diagnosisResults" style="width: 90%;">
         {% for result in results %}
         <div class="accordion-item">
             <h2 class="accordion-header">
@@ -25,13 +25,6 @@
                     <strong>{{result.disease.name}}</strong>
                     <p>{{result.probability}}</p>
                 </div>
-                <!-- <div class="accordion-header collapsed fw-bold fs-6 px-2" data-bs-toggle="collapse"
-                data-bs-target="#result{{result.disease.id}}" aria-expanded="false"
-                aria-controls="result{{result.disease.id}}" style="cursor:pointer;">
-                <div class="d-flex flex-row justify-content-between">
-                    <label>{{result.disease.name}}</label>
-                    <p>{{result.probability}}</p>
-                </div> -->
             </h2>
             <div id="result{{result.disease.id}}" class="accordion-collapse collapse"
                 data-bs-parent="#diagnosisResults">
@@ -72,6 +65,7 @@
                                 <strong>Do not have any recommendation yet...</strong>
                             </div>
                         </div>
+
                         {% endif %}
                     </div>
                 </div>

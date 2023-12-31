@@ -50,9 +50,14 @@
         <div class="row btn-group btn-group-sm" role="group" style="display: flex; justify-content: center;">
             <!-- btn to trigger the camera modal -->
             <button type="button" style="width: 40%; margin: 5px 5px 5px 5px; background-color: white;"
-                data-bs-toggle="modal" data-bs-target="#cameraModal">
+                data-bs-toggle="modal" data-bs-target="#cameraModal" id="testbtn">
                 <img src="/static/media/camera.png" alt="capture image" style="width: 50%;">
                 <span style="display: block; margin-top: 5px; font-size: large;"><strong>CAPTURE IMAGE</strong></span>
+            </button>
+            <button type="submit" style="width: 40%; margin: 5px 5px 5px 5px; background-color: white;"
+                data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <img src="/static/media/picture.png" alt="upload image" style="width: 50%;">
+                <span style="display: block; margin-top: 5px; font-size: large;"><strong>UPLOAD IMAGE</strong></span>
             </button>
             <!-- <form action="{% url 'livecamera' %}" method="get" style=" width: 40%; display: flex; justify-content: center; padding: 0;">
                 <button type="submit" style="margin: 5px 5px 5px 5px; background-color: white;">
@@ -60,14 +65,14 @@
                     <span style="display: block; margin-top: 5px; font-size: large;"><strong>CAPTURE IMAGE</strong></span>
                 </button>
             </form> -->
-            <form action="{% url 'oralhome' %}" method="get"
+            <!-- <form action="{% url 'oralhome' %}" method="get"
                 style=" width: 40%; display: flex; justify-content: center; padding: 0;">
                 <button type="submit" style="margin: 5px 5px 5px 5px; background-color: white;">
                     <img src="/static/media/picture.png" alt="upload image" style="width: 50%;">
                     <span style="display: block; margin-top: 5px; font-size: large;"><strong>UPLOAD
                             IMAGE</strong></span>
                 </button>
-            </form>
+            </form> -->
         </div>
     </div>
 </div>
@@ -78,21 +83,132 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="cameraModalLabel">Live Camera Feed</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="releaseCam()"></button>
             </div>
             <div class="modal-body">
                 <!-- iframe or other element to display the live camera feed -->
-                <img src="{% url 'livecamera' %}" style="width: 100%; height: 400px; border: none;">
-                <p>testing</p>
+                <!-- <img src="{% url 'livecamera' %}" style="width: 100%; height: 400px; border: none;"> -->
+                <img id="liveCameraImage" style="width: 100%; height: 400px; border: none;">
             </div>
             <div class="modal-footer">
-                <form action="{% url 'capture_and_save_frame' %}" method="get"
-                    style=" width: 40%; display: flex; justify-content: center; padding: 0;">
-                    <button type="submit" class="btn btn-secondary">Capture</button>
+                <button type="button" class="btn btn-secondary" id="captureBtn"
+                    style="width: 40%; display: flex; justify-content: center; padding: 0;"
+                    onclick="freezeFrame()">Capture</button>
+                <form method="post" id="saveFrameForm">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary" id="yesBtn" style="visibility: hidden;">Yes</button>
                 </form>
+                <button type="button" class="btn btn-secondary" id="noBtn" style="visibility: hidden;"
+                    onclick="unfreezeFrame()">No</button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Upload Modal -->
+<form action="{% url 'detect' %}" method="post" enctype="multipart/form-data"
+    style="display: flex; align-items: center; padding: 0;">
+    <div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadModalLabel">Upload Photo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row" style="display: flex; justify-content: center;">
+                        <div class="fs-2 fw-bold text-center">Please select a skin disease image to
+                            upload</div>
+                        <div class="row" style="display: flex; align-items: center;">
+                            <div class="col mb-2 mt-5 pb-2 pt-5" style="display: flex; justify-content: center;">
+                                {% csrf_token %}
+                                <input class="form-control form-control-lg" type="file" accept="image/*" name="img">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-secondary">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Add an event listener to update the image source when the modal is shown -->
+<script>
+    var captureBtn = document.getElementById('captureBtn');
+    var yesBtn = document.getElementById('yesBtn');
+    var noBtn = document.getElementById('noBtn');
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var liveCameraImage = document.getElementById('liveCameraImage');
+        var cameraModalElement = document.getElementById('cameraModal');
+
+        // Create a Bootstrap modal instance
+        var cameraModal = new bootstrap.Modal(cameraModalElement);
+        console.log('abco')
+
+        cameraModalElement.addEventListener('shown.bs.modal', function () {
+            var timestamp = new Date().getTime();
+            // Update the src attribute with the desired URL (replace 'livecamera' with your actual URL)
+            liveCameraImage.src = '{% url "livecamera" %}?timestamp=' + timestamp;
+            console.log('test')
+        });
+
+        var form = document.getElementById('saveFrameForm');
+        // Add a click event listener to the button
+        yesBtn.addEventListener('click', function () {
+            // Set the form action to the desired URL
+            form.action = '{% url "saveframe" %}';
+            // Manually submit the form
+            form.submit();
+
+        });
+
+    });
+
+    function unfreezeFrame() {
+        // If hidden, show the button
+        captureBtn.style.visibility = 'visible';
+        yesBtn.style.visibility = 'hidden';
+        noBtn.style.visibility = 'hidden';
+
+        var url = `{% url 'skinhome' %}?unfreeze=unfreeze`;
+        fetch(url, {
+            method: "GET",
+        }).then(data => {
+            console.log("unfreeze")
+        })
+    }
+
+    function freezeFrame() {
+        // If hidden, show the button
+        captureBtn.style.visibility = 'hidden';
+        yesBtn.style.visibility = 'visible';
+        noBtn.style.visibility = 'visible';
+
+        var url = `{% url 'skinhome' %}?freeze=freeze`;
+
+        fetch(url, {
+            method: "GET",
+        }).then(data => {
+            console.log("freeze")
+        })
+    }
+
+    function releaseCam(){
+        captureBtn.style.visibility = 'visible';
+        yesBtn.style.visibility = 'hidden';
+        noBtn.style.visibility = 'hidden';
+
+        var url = `{% url 'skinhome' %}?release=release`;
+
+        fetch(url, {
+            method: "GET",
+        }).then(data => {
+            console.log("release")
+        })
+    }
+</script>
 {% endblock %}

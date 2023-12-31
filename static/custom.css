@@ -1,7 +1,8 @@
 body{
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-input {
+
+input, textarea {
   background-color: #faf8f8 !important;
 }
 
