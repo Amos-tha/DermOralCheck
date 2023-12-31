@@ -36,6 +36,8 @@
 <!-- Load the `mapbox-gl-geocoder` plugin. -->
 
 <div id="map"></div>
+
+
 <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.1.1/mapbox-gl-directions.js"></script>
@@ -73,55 +75,77 @@
         })
     );
 
-    // Add geolocate control to the map.
-    map.addControl(
-        new mapboxgl.GeolocateControl({
-            positionOptions: {
-                enableHighAccuracy: true
-            },
-            // When active the map will receive updates to the device's location as it changes.
-            trackUserLocation: true,
-            // Draw an arrow next to the location dot to indicate which direction the device is heading.
-            showUserHeading: true
-        }),
-        'bottom-right'
-    );
-
-    map.addControl(
-        new MapboxDirections({
-            accessToken: mapboxgl.accessToken
-        }),
-        'top-left'
-    );
-
     const dermatologyClinics = [
-        { name: 'Dermalene Skin Centre - Kota Damansara', coordinates: [101.595620, 3.154990] },
-        { name: 'Gan Ain Tian', coordinates: [101.712380, 3.159050] },
-        { name: 'H-II Clinic Melawati (H2 Clinic)', coordinates: [101.757420, 3.205010] },
+        {
+            name: 'Dermalene Skin Centre - Kota Damansara',
+            coordinates: [101.595620, 3.154990],
+            address: "A-3A-G Blok A, Sunway Giza, Jalan PJU 5/14, Kota Damansara, 47810 Petaling Jaya, Selangor",
+            phone: "012-677 8721"
+        },
+        {
+            name: 'Gan Ain Tian',
+            coordinates: [101.712380, 3.159050],
+            address: "Gleneagies Hospital, 282 & 286, Jalan Ampang, Malaysia, 50450 Kuala Lumpur",
+            phone: "03-4141 3228"
+        },
+        {
+            name: 'H-II Clinic Melawati (H2 Clinic)',
+            coordinates: [101.757420, 3.205010],
+            address: "10-1 Jalan Lingkaran Tengah 2 Ukay Boulevard, Ulu Kelang, 68000 Ampang Jaya, Selangor",
+            phone: "017-871 9899"
+        },
     ];
 
     const dentistClinics = [
-        { name: 'Klinik Pergigian Prosmile Dental (Melawati) Invisalign & Zenyum Provider', coordinates: [101.710920, 3.236500] },
-        { name: 'Klinik Pergigian Fauziah', coordinates: [101.710920, 3.236500] },
-        { name: 'Klinik Pergigian myDental@Melati', coordinates: [101.73104, 3.2231076] },
+        {
+            name: 'Klinik Pergigian Prosmile Dental (Melawati) Invisalign & Zenyum Provider',
+            coordinates: [101.710920, 3.236500],
+            address: "214 & 215, Jalan Negara 2, Taman Melawati, 53100 Kuala Lumpur, Selangor",
+            phone: "03-4162 6862"
+        },
+        {
+            name: 'Toothland Dental Setapak',
+            coordinates: [101.725090, 3.191280],
+            address: "31G, Jalan 1/27b, Desa Setapak, 53300 Kuala Lumpur, Wilayah Persekutuan Kuala Lumpur",
+            phone: "012-454 3392"
+        },
+        {
+            name: 'Klinik Pergigian myDental@Melati',
+            coordinates: [101.73104, 3.2231076],
+            address: "61-G, Jalan Melati Utama 4, Melati Utama, 53100 Kuala Lumpur, Wilayah Persekutuan Kuala Lumpur",
+            phone: "010-663 3613"
+
+        },
     ];
+
+    function createPopupContent(clinic) {
+        return `
+                <div class="popup-container">
+                    <div class="popup-title"><h6>${clinic.name}</h6></div>
+                    <div class="popup-address"><strong>Address: </strong>${clinic.address}</div>
+                    <div class="popup-phone"><strong>Phone: </strong>${clinic.phone}</div>
+                </div>
+            `;
+    }
 
     // Function to add a marker for a clinic
     function addDental(clinic) {
         const dentalM = document.createElement('div');
         dentalM.className = 'dental';
+        const popupContent = createPopupContent(clinic);
         new mapboxgl.Marker(dentalM)
             .setLngLat(clinic.coordinates)
-            .setPopup(new mapboxgl.Popup().setHTML(`<h6>${clinic.name}</h6>`))
+            .setPopup(new mapboxgl.Popup().setHTML(popupContent))
             .addTo(map);
     }
 
     function addDerma(clinic) {
         const dermaM = document.createElement('div');
         dermaM.className = 'derma';
+        const popupContent = createPopupContent(clinic);
         new mapboxgl.Marker(dermaM)
             .setLngLat(clinic.coordinates)
-            .setPopup(new mapboxgl.Popup().setHTML(`<h6>${clinic.name}</h6>`))
+            .setPopup(new mapboxgl.Popup().setHTML(popupContent))
             .addTo(map);
     }
 
@@ -130,5 +154,28 @@
 
     // Add markers for dentist clinics
     dentistClinics.forEach(addDental);
+
+    // Add geolocate control to the map.
+    map.addControl(
+        new mapboxgl.GeolocateControl({
+            // When active the map will receive updates to the device's location as it changes.
+            trackUserLocation: true,
+            // Draw an arrow next to the location dot to indicate which direction the device is heading.
+            showUserHeading: true,
+            showAccuracyCircle: false
+        }),
+        'bottom-right'
+    );
+
+    map.addControl(
+        new MapboxDirections({
+            accessToken: mapboxgl.accessToken,
+            unit: 'metric',
+            // profile: 'mapbox/walking',
+            alternatives: false,
+            interactive: true,
+        }),
+        'top-left'
+    );
 </script>
 {% endblock %}

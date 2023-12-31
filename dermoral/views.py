@@ -245,7 +245,35 @@ def diagnosisoral(request):
 def history(request):
     user = Account.objects.get(phoneNo=request.session['phone'])
     history = Record.objects.filter(patient=user).values()
-    return render(request, "history.html", {"history" : history})
+    # Use a set to keep track of unique disease_img_id values
+    unique_img_ids = set()
+    img_id_dict = {}
+    medicine_list = []
+
+    for hist in history:
+        tempimgid = hist['disease_img_id']
+
+        if tempimgid not in unique_img_ids:
+            imgpath = Image.objects.filter(pk=hist['disease_img_id']).values("path").first()
+            img_id_dict[tempimgid] = {'img_path': imgpath, 'histdate' : hist['recordDate'], 'histtime': hist["recordTime"], 'data': []}
+            # Add the current disease_img_id to the set to mark it as processed
+            unique_img_ids.add(tempimgid)
+        
+        disease = Disease.objects.filter(pk=hist['disease_id']).first()
+        dict_disease = model_to_dict(disease)
+        mids = Prescription.objects.filter(disease=disease).values_list('medicine_id', flat=True)
+
+        if mids.exists():
+            for mid in mids:
+                medicine_list.append(Medicine.objects.filter(pk=mid).values().first())
+                print(mid)
+        else:
+            medicine_list = []
+
+        img_id_dict[tempimgid]['data'].append({'disease': dict_disease, 'probability': hist['probability'], 'medicines': medicine_list})
+    
+    # print(img_id_dict)
+    return render(request, "history.html", {"history" : img_id_dict})
 
 
 # read camera
