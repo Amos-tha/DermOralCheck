@@ -25,6 +25,9 @@ def login(request):
     if request.method == 'POST':
             user = Account.objects.filter(phoneNo=request.POST.get('phone'),
                                     password=request.POST.get('psw')).first()
+            
+            return redirect("home")
+
             if user:
                 request.session['phone'] = user.phoneNo
                 return redirect("home")
@@ -48,14 +51,14 @@ def signup(request):
 
 def detect(request):
     if request.method == 'POST' or request.GET.get('method') == 'POST':
-        user = Account.objects.get(phoneNo=request.session['phone'])
+        # user = Account.objects.get(phoneNo=request.session['phone'])
         if 'img' in request.FILES:
             # Load and preprocess the input image
             uploaded_file = request.FILES['img'] 
             img = tf.keras.preprocessing.image.load_img(BytesIO(uploaded_file.read()), target_size=(128, 128))  # Adjust the target size
-            # get the login user
 
-            img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
+            # img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
+            img_name = f"img_lje_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
 
             # # Uplaod image file in S3 #
             # s3 = boto3.resource("s3")
@@ -89,33 +92,32 @@ def detect(request):
 
         # Create a list of predictions and their probabilities
         diagnosis_result = []
-        medicine_list = []
+        # medicine_list = []
 
         for label, probability in zip(top_N_labels, top_N_probabilities):
             probability_formatted = round(float(probability), 4)
             if(probability_formatted > 0):
-                disease = Disease.objects.filter(name=label).first()
-                dict_disease = model_to_dict(disease)
+                # disease = Disease.objects.filter(name=label).first()
+                # dict_disease = model_to_dict(disease)
 
-                # print(dict_disease)
-                # print(dict_disease['name'])
-                print("test")
-                # insert the new record
-                record = Record.objects.create(patient=user, 
-                                        disease=disease,
-                                        probability=probability_formatted,
-                                        disease_img=disease_img)
+                # # insert the new record
+                # record = Record.objects.create(patient=user, 
+                #                         disease=disease,
+                #                         probability=probability_formatted,
+                #                         disease_img=disease_img)
                 # print(record.disease.pk)
-                mids = Prescription.objects.filter(disease=disease).values_list('medicine_id', flat=True)
+                # mids = Prescription.objects.filter(disease=disease).values_list('medicine_id', flat=True)
 
-                if mids.exists():
-                    for mid in mids:
-                        medicine_list.append(Medicine.objects.filter(pk=mid).values().first())
-                        print(mid)
-                else:
-                    medicine_list = []
+                # if mids.exists():
+                #     for mid in mids:
+                #         medicine_list.append(Medicine.objects.filter(pk=mid).values().first())
+                #         print(mid)
+                # else:
+                #     medicine_list = []
+# 
 
-                diagnosis_result.append({'disease' : dict_disease, 'probability' : record.probability, 'medicines' : medicine_list})
+                # diagnosis_result.append({'disease' : dict_disease, 'probability' : record.probability, 'medicines' : medicine_list})
+                diagnosis_result.append({'disease' : label, 'probability' : probability_formatted})
                 
                 # # check the medicine found?
                 # if mid:
@@ -124,6 +126,7 @@ def detect(request):
 
         request.session['results'] = diagnosis_result
         request.session['disease_img'] = Image.objects.filter(path=disease_img.path).values().first()
+        # request.session['disease_img'] = uploaded_file.name
         return redirect('diagnosis')    
     return render(request, "detect.html", {})
 
@@ -158,14 +161,15 @@ def profile(request):
 
 def detectoral(request):
     if request.method == 'POST' or request.GET.get('method') == 'POST':
-        user = Account.objects.get(phoneNo=request.session['phone'])
+        # user = Account.objects.get(phoneNo=request.session['phone'])
         if 'img' in request.FILES:
             # Load and preprocess the input image
             uploaded_file = request.FILES['img'] 
             img = tf.keras.preprocessing.image.load_img(BytesIO(uploaded_file.read()), target_size=(96, 96))  # Adjust the target size
             # get the login user
 
-            img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
+            # img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
+            img_name = f"img_amostha_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
 
             # # Uplaod image file in S3 #
             # s3 = boto3.resource("s3")
@@ -198,33 +202,31 @@ def detectoral(request):
 
         # Create a list of predictions and their probabilities
         diagnosis_result = []
-        medicine_list = []
+        # medicine_list = []
 
         for label, probability in zip(top_N_labels, top_N_probabilities):
             probability_formatted = round(float(probability), 4)
             if(probability_formatted > 0):
-                disease = Disease.objects.filter(name=label).first()
-                dict_disease = model_to_dict(disease)
+                # disease = Disease.objects.filter(name=label).first()
+                # dict_disease = model_to_dict(disease)
 
-                # print(dict_disease)
-                # print(dict_disease['name'])
-                print("test")
-                # insert the new record
-                record = Record.objects.create(patient=user, 
-                                        disease=disease,
-                                        probability=probability_formatted,
-                                        disease_img=disease_img)
-                # print(record.disease.pk)
-                mids = Prescription.objects.filter(disease=disease).values_list('medicine_id', flat=True)
+                # # insert the new record
+                # record = Record.objects.create(patient=user, 
+                #                         disease=disease,
+                #                         probability=probability_formatted,
+                #                         disease_img=disease_img)
+                # # print(record.disease.pk)
+                # mids = Prescription.objects.filter(disease=disease).values_list('medicine_id', flat=True)
 
-                if mids.exists():
-                    for mid in mids:
-                        medicine_list.append(Medicine.objects.filter(pk=mid).values().first())
-                        print(mid)
-                else:
-                    medicine_list = []
+                # if mids.exists():
+                #     for mid in mids:
+                #         medicine_list.append(Medicine.objects.filter(pk=mid).values().first())
+                #         print(mid)
+                # else:
+                #     medicine_list = []
 
-                diagnosis_result.append({'disease' : dict_disease, 'probability' : record.probability, 'medicines' : medicine_list})
+                # diagnosis_result.append({'disease' : dict_disease, 'probability' : record.probability, 'medicines' : medicine_list})
+                diagnosis_result.append({'disease' : label, 'probability' : probability_formatted})
                 
                 # # check the medicine found?
                 # if mid:
@@ -357,8 +359,9 @@ def live_cam(request):
 
 def save_frame(request):
     global global_camera 
-    user = Account.objects.get(phoneNo=request.session['phone'])
-    img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+    # user = Account.objects.get(phoneNo=request.session['phone'])
+    # img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+    img_name = f"img_amostha_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
     save_path = 'static/media/' + img_name
     global_camera.capture_and_save_frame(save_path)
     request.session["save_path"] = save_path
@@ -367,8 +370,9 @@ def save_frame(request):
 
 def oral_save_frame(request):
     global global_camera 
-    user = Account.objects.get(phoneNo=request.session['phone'])
-    img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+    # user = Account.objects.get(phoneNo=request.session['phone'])
+    # img_name = f"img_{user.name}_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+    img_name = f"img_amostha_{datetime.now().strftime('%Y%m%d%H%M%S')}.{uploaded_file.name.split('.')[-1]}"
     save_path = 'static/media/' + img_name
     global_camera.capture_and_save_frame(save_path)
     request.session["save_path"] = save_path
